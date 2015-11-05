@@ -1,0 +1,4 @@
+flask
+flask-restful
+sqlalchemy
+MySQL-python
