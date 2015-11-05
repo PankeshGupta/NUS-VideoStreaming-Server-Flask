@@ -12,7 +12,7 @@ from models import Video
 from db import session
 
 video_fields = {
-    'id': fields.Integer,
+    'video_id': fields.Integer,
     'title': fields.String,
     'created_at': fields.DateTime,
     'type': fields.String,
@@ -26,13 +26,13 @@ parser.add_argument('title', type=str)
 class VideoResource(Resource):
     @marshal_with(video_fields)
     def get(self, id):
-        video = session.query(Video).filter(Video.id == id).first()
+        video = session.query(Video).filter(Video.video_id == id).first()
         if not video:
             abort(404, message="Video {} doesn't exist".format(id))
         return video
 
     def delete(self, id):
-        video = session.query(Video).filter(Video.id == id).first()
+        video = session.query(Video).filter(Video.video_id == id).first()
         if not video:
             abort(404, message="Video {} doesn't exist".format(id))
         session.delete(video)
@@ -42,7 +42,7 @@ class VideoResource(Resource):
     @marshal_with(video_fields)
     def put(self, id):
         parsed_args = parser.parse_args()
-        video = session.query(Video).filter(Video.id == id).first()
+        video = session.query(Video).filter(Video.video_id == id).first()
         video.title = parsed_args['title']
         session.add(video)
         session.commit()
@@ -73,7 +73,7 @@ class VideoListResource(Resource):
 class UploadWavAPI(Resource):
     def post(self):
         parse = reqparse.RequestParser()
-        parse.add_argument('id', type=str)
+        parse.add_argument('video_id', type=long)
         parse.add_argument('video', type=FileStorage, location='files')
         args = parse.parse_args()
 

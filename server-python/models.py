@@ -15,7 +15,7 @@ Base = declarative_base()
 class Video(Base):
     __tablename__ = 'cs_videos'
 
-    id = Column(Integer, primary_key=True)
+    video_id = Column(Integer, primary_key=True)
     title = Column(String(255), nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.now)
     type = Column(Enum('VOD', 'LIVE', name='cs_video_types'), nullable=False, default='LIVE')
