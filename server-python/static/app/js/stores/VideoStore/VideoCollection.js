@@ -16,8 +16,8 @@ class VideoCollection extends Backbone.Collection {
         return this;
     }
 
-    destroyAll() {
-        this.getAll().every(video => video.destroy());
+    destroyAll(options) {
+        this.getAll().every(video => video.destroy(options));
     }
 }
 

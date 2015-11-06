@@ -46,7 +46,7 @@ AppDispatcher.on('all', function (eventName, payload) {
             _videoList.destroyAll({
                 wait: true,
                 error: function (model, response) {
-                    MessageActions.showError(`Error deleting videos. Details: '${response}'.`);
+                    MessageActions.showError(`Error deleting video. Details: '${response}'.`);
                 }
             });
             break;
