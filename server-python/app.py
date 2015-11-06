@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_httpauth import HTTPDigestAuth
 from flask.ext.restful import Api
 from settings import SUPER_USERS
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='')
 app.config['SECRET_KEY'] = 'who knows this?'
 auth = HTTPDigestAuth()
 
@@ -20,7 +20,7 @@ from resources import VideoResource
 from resources import UploadWavAPI
 
 api.add_resource(VideoListResource, '/videos', endpoint='videos')
-api.add_resource(VideoResource, '/videos/<string:id>', endpoint='video')
+api.add_resource(VideoResource, '/video/<string:id>', endpoint='video')
 api.add_resource(UploadWavAPI, '/upload', endpoint='upload')
 
 
@@ -39,6 +39,13 @@ def get_password(username):
 @auth.login_required
 def index():
     return "Hello, %s!" % auth.username()
+
+
+# serves static files during development
+@app.route('/app/<path:path>')
+def send_js(path):
+    print "requesting %s" % path
+    return send_from_directory('static/app', path)
 
 
 if __name__ == '__main__':
