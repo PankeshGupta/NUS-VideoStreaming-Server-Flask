@@ -1,13 +1,31 @@
 #!/usr/bin/env python
 
-from flask import Flask, send_from_directory
-from flask_httpauth import HTTPDigestAuth
+import logging
+
+from flask import Flask
+from flask import render_template
+from flask import send_from_directory
 from flask.ext.restful import Api
+
 from settings import SUPER_USERS
 
 app = Flask(__name__, static_url_path='')
 app.config['SECRET_KEY'] = 'who knows this?'
-auth = HTTPDigestAuth()
+
+from admin_auth import auth
+
+#################
+# Logging
+#################
+
+logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(logFormatter)
+
+rootLogger = logging.getLogger()
+rootLogger.setLevel(logging.DEBUG)
+rootLogger.addHandler(consoleHandler)
 
 #################
 # API
@@ -38,7 +56,7 @@ def get_password(username):
 @app.route('/')
 @auth.login_required
 def index():
-    return "Hello, %s!" % auth.username()
+    return render_template('index.html')
 
 
 # serves static files during development

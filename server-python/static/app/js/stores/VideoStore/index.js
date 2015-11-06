@@ -1,5 +1,6 @@
 var AppDispatcher = require('../../dispatchers/AppDispatcher');
 var VideoConstants = require('../../constants/VideoConstants');
+var MessageActions = require('../../actions/MessageActions');
 var VideoCollection = require('./VideoCollection');
 
 var _videoList = new VideoCollection();
@@ -8,13 +9,18 @@ var _videoList = new VideoCollection();
 // todo add polling here
 _videoList.fetch();
 
-
 AppDispatcher.on('all', function (eventName, payload) {
     switch (eventName) {
         case VideoConstants.VIDEO_DESTROY:
         {
             let id = payload.video_id;
-            _videoList.get(id).destroy();
+            let model = _videoList.get(id);
+            model.destroy({
+                wait: true,
+                error: function (model, response) {
+                    MessageActions.showError(`Error deleting video [${id}]. Details: '${response}'.`);
+                }
+            });
             break;
         }
 
@@ -23,14 +29,26 @@ AppDispatcher.on('all', function (eventName, payload) {
             let id = payload.video_id;
             let title = payload.title.trim();
             if (title !== '') {
-                _videoList.get(id).save({title: title});
+                let model = _videoList.get(id);
+                model.save({title: title}, {
+                    wait: true,
+                    error: function (model, response) {
+                        model.set(model.previousAttributes(), {silent: true});
+                        MessageActions.showError(`Error updating video [${id}]. Details: '${response}'.`);
+                    }
+                });
             }
             break;
         }
 
         case VideoConstants.VIDEO_DESTROY_ALL:
         {
-            _videoList.destroyAll();
+            _videoList.destroyAll({
+                wait: true,
+                error: function (model, response) {
+                    MessageActions.showError(`Error deleting videos. Details: '${response}'.`);
+                }
+            });
             break;
         }
 

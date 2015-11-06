@@ -1,15 +1,18 @@
+import logging
 from datetime import datetime
 
-from flask.ext.restful import reqparse
-from flask.ext.restful import abort
 from flask.ext.restful import Resource
+from flask.ext.restful import abort
 from flask.ext.restful import fields
 from flask.ext.restful import marshal_with
-
+from flask.ext.restful import reqparse
 from werkzeug.datastructures import FileStorage
 
-from models import Video
+from admin_auth import auth
 from db import session
+from models import Video
+
+logger = logging.getLogger(__name__)
 
 video_fields = {
     'video_id': fields.Integer,
@@ -31,21 +34,27 @@ class VideoResource(Resource):
             abort(404, message="Video {} doesn't exist".format(id))
         return video
 
+    @auth.login_required
     def delete(self, id):
+        logger.info("Deleting video [%s]" % id)
         video = session.query(Video).filter(Video.video_id == id).first()
         if not video:
             abort(404, message="Video {} doesn't exist".format(id))
         session.delete(video)
         session.commit()
+        logger.info("Deleted video [%s]" % id)
         return {}, 204
 
     @marshal_with(video_fields)
+    @auth.login_required
     def put(self, id):
+        logger.info("Updating video [%s]" % id)
         parsed_args = parser.parse_args()
         video = session.query(Video).filter(Video.video_id == id).first()
         video.title = parsed_args['title']
         session.add(video)
         session.commit()
+        logger.info("Updated video [%s]" % id)
         return video, 201
 
 

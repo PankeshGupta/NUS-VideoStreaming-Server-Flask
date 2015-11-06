@@ -20331,6 +20331,7 @@
 	"use strict";
 	var AppDispatcher = __webpack_require__(/*! ../../dispatchers/AppDispatcher */ 161);
 	var VideoConstants = __webpack_require__(/*! ../../constants/VideoConstants */ 167);
+	var MessageActions = __webpack_require__(/*! ../../actions/MessageActions */ 179);
 	var VideoCollection = __webpack_require__(/*! ./VideoCollection */ 170);
 	
 	var _videoList = new VideoCollection();
@@ -20339,13 +20340,18 @@
 	// todo add polling here
 	_videoList.fetch();
 	
-	
 	AppDispatcher.on('all', function (eventName, payload) {
 	    switch (eventName) {
 	        case VideoConstants.VIDEO_DESTROY:
 	        {
 	            var id = payload.video_id;
-	            _videoList.get(id).destroy();
+	            var model = _videoList.get(id);
+	            model.destroy({
+	                wait: true,
+	                error: function (model, response) {
+	                    MessageActions.showError((("Error deleting video [" + id) + ("]. Details: '" + response) + "'."));
+	                }
+	            });
 	            break;
 	        }
 	
@@ -20354,14 +20360,26 @@
 	            var id$0 = payload.video_id;
 	            var title = payload.title.trim();
 	            if (title !== '') {
-	                _videoList.get(id$0).save({title: title});
+	                var model$0 = _videoList.get(id$0);
+	                model$0.save({title: title}, {
+	                    wait: true,
+	                    error: function (model, response) {
+	                        model.set(model.previousAttributes(), {silent: true});
+	                        MessageActions.showError((("Error updating video [" + id$0) + ("]. Details: '" + response) + "'."));
+	                    }
+	                });
 	            }
 	            break;
 	        }
 	
 	        case VideoConstants.VIDEO_DESTROY_ALL:
 	        {
-	            _videoList.destroyAll();
+	            _videoList.destroyAll({
+	                wait: true,
+	                error: function (model, response) {
+	                    MessageActions.showError((("Error deleting videos. Details: '" + response) + "'."));
+	                }
+	            });
 	            break;
 	        }
 	
@@ -33814,10 +33832,7 @@
 	                        itemCount
 	                    ), 
 	                    itemsLeftPhrase
-					), 
-	                React.createElement("button", {id: "destroy-all", onClick: this._onDestroyAllClick}, 
-	                    "Delete All"
-	                )
+					)
 	            )
 	        )
 	    };
@@ -33828,6 +33843,67 @@
 	MIXIN$0(Header.prototype,proto$0);proto$0=void 0;return Header;})();
 	
 	module.exports = React.createClass(Header.prototype);
+
+/***/ },
+/* 179 */
+/*!******************************************!*\
+  !*** ./app/js/actions/MessageActions.js ***!
+  \******************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var AppDispatcher = __webpack_require__(/*! ../dispatchers/AppDispatcher */ 161);
+	var MessageConstants = __webpack_require__(/*! ../constants/MessageConstants */ 180);
+	
+	var MessageActions = (function(){var PRS$0 = (function(o,t){o["__proto__"]={"a":t};return o["a"]===t})({},{});var DP$0 = Object.defineProperty;var GOPD$0 = Object.getOwnPropertyDescriptor;var MIXIN$0 = function(t,s){for(var p in s){if(s.hasOwnProperty(p)){DP$0(t,p,GOPD$0(s,p));}}return t};function MessageActions() {}DP$0(MessageActions,"prototype",{"configurable":false,"enumerable":false,"writable":false});var proto$0={};
+	
+	    proto$0.showInfo = function(text) {
+	        AppDispatcher.trigger(MessageConstants.INFO_MESSAGE, {
+	            text: text
+	        });
+	    };
+	
+	    proto$0.showWarning = function(text) {
+	        AppDispatcher.trigger(MessageConstants.WARNING_MESSAGE, {
+	            text: text
+	        });
+	    };
+	
+	    proto$0.showError = function(text) {
+	        AppDispatcher.trigger(MessageConstants.ERROR_MESSAGE, {
+	            text: text
+	        });
+	    };
+	MIXIN$0(MessageActions.prototype,proto$0);proto$0=void 0;return MessageActions;})();
+	
+	module.exports = new MessageActions();
+
+/***/ },
+/* 180 */
+/*!**********************************************!*\
+  !*** ./app/js/constants/MessageConstants.js ***!
+  \**********************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	/*
+	 * Copyright (c) 2014, Facebook, Inc.
+	 * All rights reserved.
+	 *
+	 * This source code is licensed under the BSD-style license found in the
+	 * LICENSE file in the root directory of this source tree. An additional grant
+	 * of patent rights can be found in the PATENTS file in the same directory.
+	 *
+	 * TodoConstants
+	 */
+	
+	var keyMirror = __webpack_require__(/*! fbjs/lib/keyMirror */ 168);
+	
+	module.exports = keyMirror({
+	    INFO_MESSAGE: null,
+	    WARNING_MESSAGE: null,
+	    ERROR_MESSAGE: null
+	});
 
 /***/ }
 /******/ ]);

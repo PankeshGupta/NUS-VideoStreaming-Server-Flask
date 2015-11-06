@@ -23,9 +23,6 @@ class Header {
                     </strong>
                     {itemsLeftPhrase}
 				</span>
-                <button id="destroy-all" onClick={this._onDestroyAllClick}>
-                    Delete All
-                </button>
             </footer>
         )
     }
