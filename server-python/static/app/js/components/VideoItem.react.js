@@ -6,6 +6,8 @@ var classNames = require('classnames');
 var VideoActions = require('../actions/VideoActions');
 var VideoTextInput = require('./VideoTextInput.react.js');
 
+var Button = require('react-bootstrap/lib/Button');
+
 class VideoItem {
 
     getInitialState() {
@@ -46,7 +48,7 @@ class VideoItem {
                         {video.title}
                     </label>
 
-                    <button className="destroy" onClick={this._onDestroyClick}/>
+                    <Button bsStyle="danger" onClick={this._onDestroyClick}>DELETE</Button>
                 </div>
 
                 {input}
