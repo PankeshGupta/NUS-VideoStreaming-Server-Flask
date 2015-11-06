@@ -5,9 +5,10 @@ var VideoCollection = require('./VideoCollection');
 
 var _videoList = new VideoCollection();
 
-// fetch video list from server
-// todo add polling here
-_videoList.fetch();
+/** fetch video list from server */
+function getServerData() {
+    _videoList.fetch();
+}
 
 AppDispatcher.on('all', function (eventName, payload) {
     switch (eventName) {
@@ -58,3 +59,12 @@ AppDispatcher.on('all', function (eventName, payload) {
 });
 
 module.exports = _videoList;
+
+
+// perform a server refresh
+getServerData();
+
+// keep polling every few seconds
+setInterval(function () {
+    getServerData();
+}, 5000);

@@ -57,8 +57,11 @@ class VideoItem {
     }
 
     _onSave(title) {
+        this.setState({
+            isEditing: false
+        });
+
         VideoActions.updateTitle(this.props.video.video_id, title);
-        this.setState({isEditing: false});
     }
 
     _onDestroyClick() {
