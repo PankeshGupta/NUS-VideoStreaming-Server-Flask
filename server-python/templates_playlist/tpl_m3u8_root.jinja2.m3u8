@@ -1,0 +1,5 @@
+#EXTM3U
+{% for repr in repr_list %}
+#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH={{ repr.bandwidth }},RESOLUTION={{ repr.width }}x{{ repr.height }}
+{{video_base_url}}/{{ repr.repr_id }}/stream.m3u8
+{% endfor %}

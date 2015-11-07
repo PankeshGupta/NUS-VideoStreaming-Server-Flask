@@ -41,23 +41,25 @@ class Video(Base):
     repr_2_id = Column(String, ForeignKey(VideoRepresentation.repr_id), nullable=True)
     repr_3_id = Column(String, ForeignKey(VideoRepresentation.repr_id), nullable=True)
 
-    # each url can be a dynamic resource (live streaming) or a static file (on demand)
-    mpd_url = Column(String, nullable=True)
-    m3u8_url = Column(String, nullable=True)
+    # each uri can be a dynamic resource (live streaming) or a static file (on demand)
+    uri_mpd = Column(String, nullable=True)
+    uri_m3u8 = Column(String, nullable=True)
 
 
 class VideoSegment(Base):
     __tablename__ = 'cs_segments'
 
-    segment_id = Column(Integer, primary_key=True, autoincrement=False)
+    segment_id = Column(Integer, autoincrement=False)
     video_id = Column(Integer, ForeignKey(Video.video_id))
-
-    file_name = Column(String, nullable=False, unique=True)
 
     # segment status for each representation
     repr_1_status = Column(Enum('OK', 'ERROR', 'PROCESSING', 'NIL'), nullable=False, default='NIL')
     repr_2_status = Column(Enum('OK', 'ERROR', 'PROCESSING', 'NIL'), nullable=False, default='NIL')
     repr_3_status = Column(Enum('OK', 'ERROR', 'PROCESSING', 'NIL'), nullable=False, default='NIL')
+
+    # uri for each type of playlist
+    uri_mpd = Column(String, nullable=True)
+    uri_m3u8 = Column(String, nullable=True)
 
     __table_args__ = (PrimaryKeyConstraint(segment_id, video_id, name='cs_segments_pk'), {},)
 
