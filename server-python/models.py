@@ -49,8 +49,8 @@ class Video(Base):
 class VideoSegment(Base):
     __tablename__ = 'cs_segments'
 
+    video_id = Column(Integer, ForeignKey(Video.video_id), index=True)
     segment_id = Column(Integer, autoincrement=False)
-    video_id = Column(Integer, ForeignKey(Video.video_id))
 
     # segment status for each representation
     repr_1_status = Column(Enum('OK', 'ERROR', 'PROCESSING', 'NIL'), nullable=False, default='NIL')
@@ -61,7 +61,7 @@ class VideoSegment(Base):
     uri_mpd = Column(String(255), nullable=True)
     uri_m3u8 = Column(String(255), nullable=True)
 
-    __table_args__ = (PrimaryKeyConstraint(segment_id, video_id, name='cs_segments_pk'), {},)
+    __table_args__ = (PrimaryKeyConstraint(video_id, segment_id, name='cs_segments_pk'), {},)
 
 
 class DefaultRepresentations(object):

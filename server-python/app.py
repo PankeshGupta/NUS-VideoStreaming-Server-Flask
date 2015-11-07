@@ -35,10 +35,14 @@ api = Api(app)
 
 from resources import VideoListResource
 from resources import VideoResource
+from resources import VideoSegmentResource
+from resources import VideoSegmentListResource
 from resources import UploadWavAPI
 
 api.add_resource(VideoListResource, '/videos', endpoint='videos')
-api.add_resource(VideoResource, '/video/<string:id>', endpoint='video')
+api.add_resource(VideoResource, '/video/<int:id>', endpoint='video')
+api.add_resource(VideoSegmentListResource, '/video_segments/<int:video_id>', endpoint='video_segments')
+api.add_resource(VideoSegmentResource, '/video_segment/<int:video_id>/<int:segment_id>', endpoint='video_segment')
 api.add_resource(UploadWavAPI, '/upload', endpoint='upload')
 
 

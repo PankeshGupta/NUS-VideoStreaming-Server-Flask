@@ -13,6 +13,7 @@ from admin_auth import auth
 from db import session
 from models import DefaultRepresentations as Reprs
 from models import Video
+from models import VideoSegment
 
 logger = logging.getLogger(__name__)
 
@@ -22,53 +23,92 @@ video_fields = {
     'created_at': fields.DateTime,
     'type': fields.String,
     'status': fields.String,
+    'segment_count': fields.Integer,
+    'segment_duration': fields.Integer,
+    'repr_1_id': fields.String,
+    'repr_2_id': fields.String,
+    'repr_3_id': fields.String,
+    'uri_mpd': fields.String,
+    'uri_m3u8': fields.String,
 }
 
-parser = reqparse.RequestParser()
-parser.add_argument('title', type=str)
+video_segment_fields = {
+    'segment_id': fields.Integer,
+    'video_id': fields.Integer,
+    'repr_1_status': fields.String,
+    'repr_2_status': fields.String,
+    'repr_3_status': fields.String,
+    'uri_mpd': fields.String,
+    'uri_m3u8': fields.String,
+}
+
+video_parser = reqparse.RequestParser()
+video_parser.add_argument('title', type=str)
 
 
 class VideoResource(Resource):
     @marshal_with(video_fields)
-    def get(self, id):
-        video = session.query(Video).filter(Video.video_id == id).first()
+    def get(self, video_id):
+        video = session \
+            .query(Video) \
+            .filter(Video.video_id == video_id) \
+            .first()
+
         if not video:
-            abort(404, message="Video {} doesn't exist".format(id))
+            abort(404, message="Video {} doesn't exist".format(video_id))
+
         return video
 
     @auth.login_required
-    def delete(self, id):
-        logger.info("Deleting video [%s]" % id)
-        video = session.query(Video).filter(Video.video_id == id).first()
+    def delete(self, video_id):
+        logger.info("Deleting video [%s]" % video_id)
+
+        video = session \
+            .query(Video) \
+            .filter(Video.video_id == video_id) \
+            .first()
+
         if not video:
-            abort(404, message="Video {} doesn't exist".format(id))
+            abort(404, message="Video {} doesn't exist".format(video_id))
+
         session.delete(video)
         session.commit()
-        logger.info("Deleted video [%s]" % id)
+        logger.info("Deleted video [%s]" % video_id)
+
         return {}, 204
 
     @marshal_with(video_fields)
     @auth.login_required
-    def put(self, id):
-        logger.info("Updating video [%s]" % id)
-        parsed_args = parser.parse_args()
-        video = session.query(Video).filter(Video.video_id == id).first()
+    def put(self, video_id):
+        logger.info("Updating video [%s]" % video_id)
+        parsed_args = video_parser.parse_args()
+
+        video = session \
+            .query(Video) \
+            .filter(Video.video_id == video_id) \
+            .first()
+
         video.title = parsed_args['title']
         session.add(video)
         session.commit()
-        logger.info("Updated video [%s]" % id)
+        logger.info("Updated video [%s]" % video_id)
+
         return video, 201
 
 
 class VideoListResource(Resource):
     @marshal_with(video_fields)
     def get(self):
-        videos = session.query(Video).order_by(desc(Video.created_at)).all()
+        videos = session \
+            .query(Video) \
+            .order_by(desc(Video.created_at)) \
+            .all()
+
         return videos
 
     @marshal_with(video_fields)
     def post(self):
-        parse_args = parser.parse_args()
+        parse_args = video_parser.parse_args()
 
         new_video = Video()
         new_video.title = parse_args['title']
@@ -80,10 +120,36 @@ class VideoListResource(Resource):
         new_video.repr_1_id = Reprs.HIGH.repr_id
         new_video.repr_2_id = Reprs.MEDIUM.repr_id
         new_video.repr_3_id = Reprs.LOW.repr_id
+        new_video.uri_mpd = None
+        new_video.uri_m3u8 = None
 
         session.add(new_video)
         session.commit()
         return new_video, 201
+
+
+class VideoSegmentResource(Resource):
+    @marshal_with(video_segment_fields)
+    def get(self, video_id, segment_id):
+        segment = session \
+            .query(VideoSegment) \
+            .filter((VideoSegment.video_id == video_id) & (VideoSegment.segment_id == segment_id)) \
+            .first()
+
+        if not segment:
+            abort(404, message="Segment (%s, %s) doesn't exist" % (video_id, segment_id))
+
+        return segment
+
+
+class VideoSegmentListResource(Resource):
+    @marshal_with(video_fields)
+    def get(self, video_id):
+        segments = session \
+            .query(VideoSegment) \
+            .filter(VideoSegment.video_id == video_id) \
+            .all()
+        return segments
 
 
 class UploadWavAPI(Resource):
