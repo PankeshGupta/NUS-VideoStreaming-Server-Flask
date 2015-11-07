@@ -15,6 +15,8 @@
     "react-dom": "^0.14.2",
     "react-router": "^1.0.0-rc4",
     "react-bootstrap": "^0.27.3",
+    "material-ui": "^0.13.1",
+    "react-tap-event-plugin": "^0.2.1",
     "fbjs": "^0.4.0",
     "classnames": "^2.2.0",
     "merge": "^1.2.0",

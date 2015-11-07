@@ -1,7 +1,7 @@
 /** @jsx React.DOM */
-var React = require('react');
-var ReactPropTypes = React.PropTypes;
-var VideoActions = require('../actions/VideoActions');
+const React = require('react');
+const ReactPropTypes = React.PropTypes;
+const VideoActions = require('../actions/VideoActions');
 
 const ENTER_KEY_CODE = 13;
 

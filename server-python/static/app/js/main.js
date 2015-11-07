@@ -1,7 +1,10 @@
 /** @jsx React.DOM */
-var React = require('react');
-var ReactDOM = require('react-dom');
+const React = require('react');
+const ReactDOM = require('react-dom');
+const VideoApp = require('./components/VideoApp.react.js');
 
-var VideoApp = require('./components/VideoApp.react.js');
+// for material-ui
+const injectTapEventPlugin = require("react-tap-event-plugin");
+injectTapEventPlugin();
 
 ReactDOM.render(<VideoApp />, document.getElementById('videoapp'));

@@ -1,8 +1,8 @@
 /** @jsx React.DOM */
-var React = require('react');
-var VideoStore = require('../stores/VideoStore');
-var VideoList = require('./VideoList.react.js');
-var Header = require('./Header.react.js');
+const React = require('react');
+const VideoStore = require('../stores/VideoStore');
+const VideoList = require('./VideoList.react.js');
+const Header = require('./Header.react.js');
 
 
 function getAppState() {

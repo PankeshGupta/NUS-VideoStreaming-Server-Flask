@@ -6,6 +6,7 @@ from flask.ext.restful import abort
 from flask.ext.restful import fields
 from flask.ext.restful import marshal_with
 from flask.ext.restful import reqparse
+from sqlalchemy import desc
 from werkzeug.datastructures import FileStorage
 
 from admin_auth import auth
@@ -61,7 +62,7 @@ class VideoResource(Resource):
 class VideoListResource(Resource):
     @marshal_with(video_fields)
     def get(self):
-        videos = session.query(Video).all()
+        videos = session.query(Video).order_by(desc(Video.created_at)).all()
         return videos
 
     @marshal_with(video_fields)

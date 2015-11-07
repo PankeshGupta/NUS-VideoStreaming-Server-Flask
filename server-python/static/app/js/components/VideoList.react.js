@@ -1,9 +1,9 @@
 /** @jsx React.DOM */
-var React = require('react');
-var ReactPropTypes = React.PropTypes;
+const React = require('react');
+const ReactPropTypes = React.PropTypes;
 
-var VideoActions = require('../actions/VideoActions');
-var VideoItem = require('./VideoItem.react.js');
+const VideoActions = require('../actions/VideoActions');
+const VideoItem = require('./VideoItem.react.js');
 
 class VideoList {
 

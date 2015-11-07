@@ -17,7 +17,7 @@ class Video(Base):
 
     video_id = Column(Integer, primary_key=True)
     title = Column(String(255), nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.now)
+    created_at = Column(DateTime, nullable=False, default=datetime.now, index=True)
     type = Column(Enum('VOD', 'LIVE', name='cs_video_types'), nullable=False, default='LIVE')
     status = Column(Enum('EMPTY', 'OK', 'ERROR', name='cs_video_status_types'), nullable=False, default='EMPTY')
 

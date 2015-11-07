@@ -1,11 +1,11 @@
 /** @jsx React.DOM */
-var React = require('react');
-var Routes = require('react-router').Routes;
-var Route = require('react-router').Route;
+const React = require('react');
+const Routes = require('react-router').Routes;
+const Route = require('react-router').Route;
 
-var App  = require('./App.react');
-var Home = require('./Home.react');
-var About = require('./About.react');
+const App  = require('./App.react');
+const Home = require('./Home.react');
+const About = require('./About.react');
 
 class Router {
 	render () {
