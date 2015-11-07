@@ -11,6 +11,7 @@ from werkzeug.datastructures import FileStorage
 
 from admin_auth import auth
 from db import session
+from models import DefaultRepresentations as Reprs
 from models import Video
 
 logger = logging.getLogger(__name__)
@@ -74,6 +75,11 @@ class VideoListResource(Resource):
         new_video.type = 'LIVE'
         new_video.status = 'EMPTY'
         new_video.created_at = datetime.now()
+        new_video.segment_count = 0
+        new_video.segment_duration = 3000
+        new_video.repr_1_id = Reprs.HIGH.repr_id
+        new_video.repr_2_id = Reprs.MEDIUM.repr_id
+        new_video.repr_3_id = Reprs.LOW.repr_id
 
         session.add(new_video)
         session.commit()

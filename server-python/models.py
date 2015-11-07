@@ -17,7 +17,7 @@ Base = declarative_base()
 class VideoRepresentation(Base):
     __tablename__ = 'cs_representations'
 
-    repr_id = Column(String, primary_key=True)
+    repr_id = Column(String(100), primary_key=True)
     bandwidth = Column(Integer, nullable=False)
     width = Column(Integer, nullable=False)
     height = Column(Integer, nullable=False)
@@ -34,16 +34,16 @@ class Video(Base):
     status = Column(Enum('EMPTY', 'OK', 'ERROR', name='cs_video_status_types'), nullable=False, default='EMPTY')
 
     segment_count = Column(Integer, nullable=False, default=0)
-    segment_duration = Column(Integer, nullable=False)
+    segment_duration = Column(Integer, nullable=False, default=3000)
 
     # if a representation is not available, set it to null
-    repr_1_id = Column(String, ForeignKey(VideoRepresentation.repr_id), nullable=True)
-    repr_2_id = Column(String, ForeignKey(VideoRepresentation.repr_id), nullable=True)
-    repr_3_id = Column(String, ForeignKey(VideoRepresentation.repr_id), nullable=True)
+    repr_1_id = Column(String(100), ForeignKey(VideoRepresentation.repr_id), nullable=True)
+    repr_2_id = Column(String(100), ForeignKey(VideoRepresentation.repr_id), nullable=True)
+    repr_3_id = Column(String(100), ForeignKey(VideoRepresentation.repr_id), nullable=True)
 
     # each uri can be a dynamic resource (live streaming) or a static file (on demand)
-    uri_mpd = Column(String, nullable=True)
-    uri_m3u8 = Column(String, nullable=True)
+    uri_mpd = Column(String(255), nullable=True)
+    uri_m3u8 = Column(String(255), nullable=True)
 
 
 class VideoSegment(Base):
@@ -58,10 +58,30 @@ class VideoSegment(Base):
     repr_3_status = Column(Enum('OK', 'ERROR', 'PROCESSING', 'NIL'), nullable=False, default='NIL')
 
     # uri for each type of playlist
-    uri_mpd = Column(String, nullable=True)
-    uri_m3u8 = Column(String, nullable=True)
+    uri_mpd = Column(String(255), nullable=True)
+    uri_m3u8 = Column(String(255), nullable=True)
 
     __table_args__ = (PrimaryKeyConstraint(segment_id, video_id, name='cs_segments_pk'), {},)
+
+
+class DefaultRepresentations(object):
+    HIGH = VideoRepresentation()
+    HIGH.repr_id = 'HIGH'
+    HIGH.bandwidth = 3000000
+    HIGH.width = 720
+    HIGH.height = 480
+
+    MEDIUM = VideoRepresentation()
+    MEDIUM.repr_id = 'MEDIUM'
+    MEDIUM.bandwidth = 768000
+    MEDIUM.width = 480
+    MEDIUM.height = 320
+
+    LOW = VideoRepresentation()
+    LOW.repr_id = 'LOW'
+    LOW.bandwidth = 200000
+    LOW.width = 240
+    LOW.height = 160
 
 
 if __name__ == "__main__":
@@ -75,26 +95,8 @@ if __name__ == "__main__":
     from db import session
 
     # create the default representations
-
-    repr_1 = VideoRepresentation()
-    repr_1.repr_id = 'HIGH'
-    repr_1.bandwidth = 3000000
-    repr_1.width = 720
-    repr_1.height = 480
-    session.add(repr_1)
-
-    repr_2 = VideoRepresentation()
-    repr_2.repr_id = 'MEDIUM'
-    repr_2.bandwidth = 768000
-    repr_2.width = 480
-    repr_2.height = 320
-    session.add(repr_2)
-
-    repr_3 = VideoRepresentation()
-    repr_3.repr_id = 'LOW'
-    repr_3.bandwidth = 200000
-    repr_3.width = 240
-    repr_3.height = 160
-    session.add(repr_3)
+    session.add(DefaultRepresentations.HIGH)
+    session.add(DefaultRepresentations.MEDIUM)
+    session.add(DefaultRepresentations.LOW)
 
     session.commit()

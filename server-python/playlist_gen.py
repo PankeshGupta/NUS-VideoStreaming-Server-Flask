@@ -29,36 +29,15 @@ def gen_m3u8_stream(segment_duration_seconds, segment_list):
 
 
 if __name__ == "__main__":
-    from models import VideoRepresentation
     from models import VideoSegment
+    from models import DefaultRepresentations as Reprs
 
     # test the above method
 
     base_video_url = "http://www.video.org/myvideo.mp4"
     segment_duration_millis = 3000
-    repr_list = []
+    repr_list = [Reprs.HIGH, Reprs.MEDIUM, Reprs.LOW]
     segment_list = []
-
-    repr = VideoRepresentation()
-    repr.repr_id = 'HIGH'
-    repr.bandwidth = 3000000
-    repr.width = 720
-    repr.height = 480
-    repr_list.append(repr)
-
-    repr = VideoRepresentation()
-    repr.repr_id = 'MEDIUM'
-    repr.bandwidth = 768000
-    repr.width = 480
-    repr.height = 320
-    repr_list.append(repr)
-
-    repr = VideoRepresentation()
-    repr.repr_id = 'LOW'
-    repr.bandwidth = 200000
-    repr.width = 240
-    repr.height = 160
-    repr_list.append(repr)
 
     segment = VideoSegment()
     segment.uri_mpd = "000001.mp4"
