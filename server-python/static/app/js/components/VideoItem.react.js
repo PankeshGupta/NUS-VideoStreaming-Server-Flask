@@ -15,7 +15,6 @@ const CardText = require('material-ui/lib/card/card-text');
 const FlatButton = require('material-ui/lib/flat-button');
 const RaisedButton = require('material-ui/lib/raised-button');
 const TextField = require('material-ui/lib/text-field');
-const Paper = require('material-ui/lib/paper');
 
 class VideoItem {
 
