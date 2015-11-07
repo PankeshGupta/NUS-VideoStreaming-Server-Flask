@@ -10,17 +10,11 @@ from sqlalchemy import Integer
 from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy import String
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import composite
+
+from video_repr import VideoRepresentation
 
 Base = declarative_base()
-
-
-class VideoRepresentation(Base):
-    __tablename__ = 'cs_representations'
-
-    repr_id = Column(String(100), primary_key=True)
-    bandwidth = Column(Integer, nullable=False)
-    width = Column(Integer, nullable=False)
-    height = Column(Integer, nullable=False)
 
 
 class Video(Base):
@@ -36,10 +30,24 @@ class Video(Base):
     segment_count = Column(Integer, nullable=False, default=0)
     segment_duration = Column(Integer, nullable=False, default=3000)
 
-    # if a representation is not available, set it to null
-    repr_1_id = Column(String(100), ForeignKey(VideoRepresentation.repr_id), nullable=True)
-    repr_2_id = Column(String(100), ForeignKey(VideoRepresentation.repr_id), nullable=True)
-    repr_3_id = Column(String(100), ForeignKey(VideoRepresentation.repr_id), nullable=True)
+    # if a representation is not available, set its properties to null
+    repr_1_name = Column(String(255), nullable=True)
+    repr_1_bandwidth = Column(Integer, nullable=True)
+    repr_1_width = Column(Integer, nullable=True)
+    repr_1_height = Column(Integer, nullable=True)
+    repr_1 = composite(VideoRepresentation, repr_1_name, repr_1_bandwidth, repr_1_width, repr_1_height)
+
+    repr_2_name = Column(String(255), nullable=True)
+    repr_2_bandwidth = Column(Integer, nullable=True)
+    repr_2_width = Column(Integer, nullable=True)
+    repr_2_height = Column(Integer, nullable=True)
+    repr_2 = composite(VideoRepresentation, repr_2_name, repr_2_bandwidth, repr_2_width, repr_2_height)
+
+    repr_3_name = Column(String(255), nullable=True)
+    repr_3_bandwidth = Column(Integer, nullable=True)
+    repr_3_width = Column(Integer, nullable=True)
+    repr_3_height = Column(Integer, nullable=True)
+    repr_3 = composite(VideoRepresentation, repr_3_name, repr_3_bandwidth, repr_3_width, repr_3_height)
 
     # each uri can be a dynamic resource (live streaming) or a static file (on demand)
     uri_mpd = Column(String(255), nullable=True)
@@ -64,26 +72,6 @@ class VideoSegment(Base):
     __table_args__ = (PrimaryKeyConstraint(video_id, segment_id, name='cs_segments_pk'), {},)
 
 
-class DefaultRepresentations(object):
-    HIGH = VideoRepresentation()
-    HIGH.repr_id = 'HIGH'
-    HIGH.bandwidth = 3000000
-    HIGH.width = 720
-    HIGH.height = 480
-
-    MEDIUM = VideoRepresentation()
-    MEDIUM.repr_id = 'MEDIUM'
-    MEDIUM.bandwidth = 768000
-    MEDIUM.width = 480
-    MEDIUM.height = 320
-
-    LOW = VideoRepresentation()
-    LOW.repr_id = 'LOW'
-    LOW.bandwidth = 200000
-    LOW.width = 240
-    LOW.height = 160
-
-
 if __name__ == "__main__":
     from sqlalchemy import create_engine
     from settings import DB_URI
@@ -91,12 +79,3 @@ if __name__ == "__main__":
     engine = create_engine(DB_URI)
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
-
-    from db import session
-
-    # create the default representations
-    session.add(DefaultRepresentations.HIGH)
-    session.add(DefaultRepresentations.MEDIUM)
-    session.add(DefaultRepresentations.LOW)
-
-    session.commit()

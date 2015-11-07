@@ -11,7 +11,7 @@ from werkzeug.datastructures import FileStorage
 
 from admin_auth import auth
 from db import session
-from models import DefaultRepresentations as Reprs
+from video_repr import DefaultRepresentations as Reprs
 from models import Video
 from models import VideoSegment
 
@@ -23,11 +23,25 @@ video_fields = {
     'created_at': fields.DateTime,
     'type': fields.String,
     'status': fields.String,
+    
     'segment_count': fields.Integer,
     'segment_duration': fields.Integer,
-    'repr_1_id': fields.String,
-    'repr_2_id': fields.String,
-    'repr_3_id': fields.String,
+    
+    'repr_1_name': fields.String,
+    'repr_1_bandwidth': fields.Integer,
+    'repr_1_width': fields.Integer,
+    'repr_1_height': fields.Integer,
+
+    'repr_2_name': fields.String,
+    'repr_2_bandwidth': fields.Integer,
+    'repr_2_width': fields.Integer,
+    'repr_2_height': fields.Integer,
+
+    'repr_3_name': fields.String,
+    'repr_3_bandwidth': fields.Integer,
+    'repr_3_width': fields.Integer,
+    'repr_3_height': fields.Integer,
+    
     'uri_mpd': fields.String,
     'uri_m3u8': fields.String,
 }
@@ -117,9 +131,9 @@ class VideoListResource(Resource):
         new_video.created_at = datetime.now()
         new_video.segment_count = 0
         new_video.segment_duration = 3000
-        new_video.repr_1_id = Reprs.HIGH.repr_id
-        new_video.repr_2_id = Reprs.MEDIUM.repr_id
-        new_video.repr_3_id = Reprs.LOW.repr_id
+        new_video.repr_1 = Reprs.HIGH
+        new_video.repr_2 = Reprs.MEDIUM
+        new_video.repr_3 = Reprs.LOW
         new_video.uri_mpd = None
         new_video.uri_m3u8 = None
 
