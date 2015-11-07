@@ -11,19 +11,19 @@ template_m3u8_root = templateEnv.get_template("tpl_m3u8_root.jinja2.m3u8")
 template_m3u8_stream = templateEnv.get_template("tpl_m3u8_stream.jinja2.m3u8")
 
 
-def write_mpd(video_base_url, segment_duration_millis, segment_list, repr_list):
+def gen_mpd(video_base_url, segment_duration_millis, segment_list, repr_list):
     return template_mpd.render(video_base_url=video_base_url,
                                repr_list=repr_list,
                                segment_duration_millis=segment_duration_millis,
                                segment_list=segment_list)
 
 
-def write_m3u8_root(video_base_url, repr_list):
+def gen_m3u8_root(video_base_url, repr_list):
     return template_m3u8_root.render(video_base_url=video_base_url,
                                      repr_list=repr_list)
 
 
-def write_m3u8_stream(segment_duration_seconds, segment_list):
+def gen_m3u8_stream(segment_duration_seconds, segment_list):
     return template_m3u8_stream.render(segment_duration_seconds=segment_duration_seconds,
                                        segment_list=segment_list)
 
@@ -75,6 +75,6 @@ if __name__ == "__main__":
     segment.uri_m3u8 = "000003.ts"
     segment_list.append(segment)
 
-    print write_mpd(base_video_url, segment_duration_millis, segment_list, repr_list)
-    # print write_m3u8_root(base_video_url, repr_list)
-    # print write_m3u8_stream(segment_duration_millis / 1000, segment_list)
+    print gen_mpd(base_video_url, segment_duration_millis, segment_list, repr_list)
+    # print gen_m3u8_root(base_video_url, repr_list)
+    # print gen_m3u8_stream(segment_duration_millis / 1000, segment_list)
