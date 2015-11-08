@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # inputfile bitrate framerate resolution audiofreq audiobitrate ptop pbottom pleft pright tmpfile logfile ffmpegpath
 
 # SUBQ - time vs. quality
