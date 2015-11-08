@@ -43,3 +43,14 @@ class DefaultRepresentations(object):
         width=240,
         height=160
     )
+
+
+class Constants(object):
+
+    AUDIO_BITRATE = 64
+
+    AUDIO_SAMPLE_FREQUENCY = 44100
+
+    VIDEO_FPS = 29.7
+
+    VIDEO_BIT_RATE_DIV = 1000

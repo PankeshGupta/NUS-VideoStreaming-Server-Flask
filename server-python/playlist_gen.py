@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import jinja2
 
 templateLoader = jinja2.FileSystemLoader(searchpath="templates_playlist")

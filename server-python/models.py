@@ -93,7 +93,7 @@ class VideoListCache(object):
 
     @classmethod
     def set(cls, video_list):
-        cache.set("cs2015_team03_all_videos", video_list)
+        cache.set("cs2015_team03_all_videos", video_list, timeout=5 * 60)
 
     @staticmethod
     def on_data_changed(target, value, oldvalue):
