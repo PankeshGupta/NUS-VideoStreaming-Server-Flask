@@ -68,7 +68,7 @@ echo
 $thecommand
 echo
 
-thecommand=$fpath"ffmpeg -i "$inputfile" -threads "$threads" -pass 2 -acodec aac -ar "$audiohz" -ab "$audiobitrate"000 -ac 2 $alloptions $secondoptions -passlogfile "$logfile" -y "$tmpfile
+thecommand=$fpath"ffmpeg -i "$inputfile" -threads "$threads" -pass 2 -acodec libfdk_aac -ar "$audiohz" -ab "$audiobitrate"000 -ac 2 $alloptions $secondoptions -passlogfile "$logfile" -y "$tmpfile
 
 echo $thecommand
 echo
