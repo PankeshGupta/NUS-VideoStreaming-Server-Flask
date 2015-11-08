@@ -9,7 +9,7 @@ class VideoCollection extends Backbone.Collection {
     }
 
     get url() {
-        return ServerSettings.PROTOCOL_HOST_PORT + '/videos';
+        return ServerSettings.PROTOCOL_HOST_PORT + '/videos?_admin=yes';
     }
 
     getAll() {

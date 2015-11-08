@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-
+from flask import request
 from flask.ext.restful import Resource
 from flask.ext.restful import abort
 from flask.ext.restful import fields
@@ -8,12 +8,13 @@ from flask.ext.restful import marshal_with
 from flask.ext.restful import reqparse
 from sqlalchemy import desc
 from werkzeug.datastructures import FileStorage
-
+from models import VideoListCache
 from admin_auth import auth
 from db import session
 from video_repr import DefaultRepresentations as Reprs
 from models import Video
 from models import VideoSegment
+from settings import USE_CACHE_FOR_POLLING
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +24,10 @@ video_fields = {
     'created_at': fields.DateTime,
     'type': fields.String,
     'status': fields.String,
-    
+
     'segment_count': fields.Integer,
     'segment_duration': fields.Integer,
-    
+
     'repr_1_name': fields.String,
     'repr_1_bandwidth': fields.Integer,
     'repr_1_width': fields.Integer,
@@ -41,7 +42,7 @@ video_fields = {
     'repr_3_bandwidth': fields.Integer,
     'repr_3_width': fields.Integer,
     'repr_3_height': fields.Integer,
-    
+
     'uri_mpd': fields.String,
     'uri_m3u8': fields.String,
 }
@@ -113,10 +114,22 @@ class VideoResource(Resource):
 class VideoListResource(Resource):
     @marshal_with(video_fields)
     def get(self):
-        videos = session \
-            .query(Video) \
-            .order_by(desc(Video.created_at)) \
-            .all()
+        videos = None
+
+        if USE_CACHE_FOR_POLLING and request.args.get('_admin', None) == 'yes':
+            # serve from cache, since this is mostly polling
+            videos = VideoListCache.get()
+
+        if videos:
+            logger.debug("Serving the video list from cache")
+        else:
+            videos = session \
+                .query(Video) \
+                .order_by(desc(Video.created_at)) \
+                .all()
+
+            if USE_CACHE_FOR_POLLING:
+                VideoListCache.set(videos)
 
         return videos
 
@@ -139,6 +152,7 @@ class VideoListResource(Resource):
 
         session.add(new_video)
         session.commit()
+
         return new_video, 201
 
 

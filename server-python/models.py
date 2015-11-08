@@ -9,15 +9,22 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy import String
+from sqlalchemy import event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import composite
 
+from caching import cache
 from video_repr import VideoRepresentation
 
 Base = declarative_base()
 
 
-class Video(Base):
+# A marker for all models declared in this app
+class CsMixin(object):
+    pass
+
+
+class Video(Base, CsMixin):
     __tablename__ = 'cs_videos'
 
     video_id = Column(Integer, primary_key=True)
@@ -54,7 +61,7 @@ class Video(Base):
     uri_m3u8 = Column(String(255), nullable=True)
 
 
-class VideoSegment(Base):
+class VideoSegment(Base, CsMixin):
     __tablename__ = 'cs_segments'
 
     video_id = Column(Integer, ForeignKey(Video.video_id), index=True)
@@ -71,6 +78,35 @@ class VideoSegment(Base):
 
     __table_args__ = (PrimaryKeyConstraint(video_id, segment_id, name='cs_segments_pk'), {},)
 
+
+# For caching of the video list. The cache will be refresh whenever there is any change to the data.
+# This is mostly to reduce the impact of polling (from the Admin UI) on the database.
+# This also means that this server needs more work before it can be clustered.
+class VideoListCache(object):
+    @classmethod
+    def clear(cls):
+        cache.delete("cs2015_team03_all_videos")
+
+    @classmethod
+    def get(cls):
+        return cache.get("cs2015_team03_all_videos")
+
+    @classmethod
+    def set(cls, video_list):
+        cache.set("cs2015_team03_all_videos", video_list)
+
+    @staticmethod
+    def on_data_changed(target, value, oldvalue):
+        VideoListCache.clear()
+
+    @staticmethod
+    def listen_on_data_changes():
+        event.listen(CsMixin, 'after_insert', VideoListCache.on_data_changed, propagate=True)
+        event.listen(CsMixin, 'after_update', VideoListCache.on_data_changed, propagate=True)
+        event.listen(CsMixin, 'after_delete', VideoListCache.on_data_changed, propagate=True)
+
+
+VideoListCache.listen_on_data_changes()
 
 if __name__ == "__main__":
     from sqlalchemy import create_engine
