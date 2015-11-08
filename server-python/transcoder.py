@@ -1,11 +1,19 @@
 #!/usr/bin/env python
 
 import os
+import platform
 import shutil
 from subprocess import call
 
 from video_repr import Constants as Repr
 from video_repr import DefaultRepresentations
+
+tool_platform_subdir = "ix"
+
+# Added this because Ubuntu needs a different version of the convert.sh script
+platform, _1, _2 = platform.linux_distribution()
+if platform == "Ubuntu":
+    tool_platform_subdir = "ubuntu"
 
 
 def prepare_target_dir(file_path):
@@ -22,7 +30,8 @@ def prepare_target_dir(file_path):
 def encode_x264(file_src, file_target, bitrate, fps, width, height, audio_asfq, audio_bitrate):
     prepare_target_dir(file_target)
 
-    call('./tools/ix/convert.sh "%s" %d %s %dx%d %d %d "%s"' % (
+    call('./tools/%s/convert.sh "%s" %d %s %dx%d %d %d "%s"' % (
+        tool_platform_subdir,
         file_src,
         bitrate,
         str(fps),
