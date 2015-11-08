@@ -120,9 +120,7 @@ class VideoListResource(Resource):
             # serve from cache, since this is mostly polling
             videos = VideoListCache.get()
 
-        if videos:
-            logger.debug("Serving the video list from cache")
-        else:
+        if videos is None:
             videos = session \
                 .query(Video) \
                 .order_by(desc(Video.created_at)) \
@@ -130,6 +128,9 @@ class VideoListResource(Resource):
 
             if USE_CACHE_FOR_POLLING:
                 VideoListCache.set(videos)
+
+        else:
+            logger.debug("Serving the video list from cache")
 
         return videos
 
