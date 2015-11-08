@@ -4,4 +4,5 @@ flask-httpauth
 sqlalchemy
 MySQL-python
 python-memcached
+redislite
 Celery
