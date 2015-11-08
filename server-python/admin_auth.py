@@ -1,3 +1,6 @@
 from flask_httpauth import HTTPDigestAuth
 
-auth = HTTPDigestAuth()
+auth = None
+
+if auth is None:
+    auth = HTTPDigestAuth()

@@ -83,6 +83,8 @@ class VideoSegment(Base, CsMixin):
 # This is mostly to reduce the impact of polling (from the Admin UI) on the database.
 # This also means that this server needs more work before it can be clustered.
 class VideoListCache(object):
+    is_listening_on_data_changes = False
+
     @classmethod
     def clear(cls):
         cache.delete("cs2015_team03_all_videos")
@@ -99,8 +101,13 @@ class VideoListCache(object):
     def on_data_changed(target, value, oldvalue):
         VideoListCache.clear()
 
-    @staticmethod
-    def listen_on_data_changes():
+    @classmethod
+    def listen_on_data_changes(cls):
+        if cls.is_listening_on_data_changes:
+            return
+        else:
+            cls.is_listening_on_data_changes = True
+
         event.listen(CsMixin, 'after_insert', VideoListCache.on_data_changed, propagate=True)
         event.listen(CsMixin, 'after_update', VideoListCache.on_data_changed, propagate=True)
         event.listen(CsMixin, 'after_delete', VideoListCache.on_data_changed, propagate=True)
