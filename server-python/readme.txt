@@ -20,3 +20,8 @@ under app/js and automatically perform a rebuild of
 bundle.js, run:
 
 npm run-script watch
+
+3. Install the transcoding utilities
+===========================================
+Download and install Bento4 from: https://www.bento4.com
+Copy the binaries files to /usr/local/bin.
