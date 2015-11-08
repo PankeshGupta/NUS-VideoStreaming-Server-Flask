@@ -7,24 +7,24 @@
   "main": "app/scripts/main.js",
   "private": true,
   "dependencies": {
-    "backbone": "^1.2.3",
-    "backbone.localstorage": "^1.1.16",
-    "es6-promise": "^3.0.2",
-    "jquery": "^2.1.4",
-    "react": "^0.14.2",
-    "react-dom": "^0.14.2",
-    "react-router": "^1.0.0-rc4",
-    "react-bootstrap": "^0.27.3",
-    "material-ui": "^0.13.1",
-    "react-tap-event-plugin": "^0.2.1",
-    "fbjs": "^0.4.0",
-    "classnames": "^2.2.0",
-    "merge": "^1.2.0",
-    "es6-loader": "^0.2.0",
-    "jsx-loader": "^v0.13.2"
+    "backbone": "1.2.3",
+    "backbone.localstorage": "1.1.16",
+    "es6-promise": "3.0.2",
+    "jquery": "2.1.4",
+    "react": "0.14.2",
+    "react-dom": "0.14.2",
+    "react-router": "1.0.0-rc4",
+    "react-bootstrap": "0.27.3",
+    "material-ui": "0.13.1",
+    "react-tap-event-plugin": "0.2.1",
+    "fbjs": "0.4.0",
+    "classnames": "2.2.0",
+    "merge": "1.2.0",
+    "es6-loader": "0.2.0",
+    "jsx-loader": "0.13.2"
   },
   "devDependencies": {
-    "traceur-loader": "^0.6.3"
+    "traceur-loader": "0.6.3"
   },
   "scripts": {
     "build": "webpack -c --progress -d -p",
