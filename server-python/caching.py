@@ -2,10 +2,8 @@ import logging
 import sys
 
 from werkzeug.contrib.cache import MemcachedCache
-from werkzeug.contrib.cache import RedisCache
 from werkzeug.contrib.cache import SimpleCache
 
-from redis_client import redis
 from settings import CACHE_BACKEND
 from settings import MEMCACHED_HOST_PORT
 
@@ -34,7 +32,7 @@ if "MEMCACHED" == CACHE_BACKEND:
     except:
         logger.warn("Error connecting to Memcached. Error=[%r]." % sys.exc_info()[0])
 
-
+'''
 elif "REDIS" == CACHE_BACKEND:
     # Try to use redis
     try:
@@ -55,3 +53,4 @@ elif "REDIS" == CACHE_BACKEND:
 
     except:
         logger.warn("Error connecting to Redis. Error=[%r]." % sys.exc_info()[0])
+'''
