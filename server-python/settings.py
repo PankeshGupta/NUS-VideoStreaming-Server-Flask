@@ -1,4 +1,4 @@
-DB_URI = 'mysql://team03_15:p@jTevjFfpZdTYTTy@localhost:3306/team03_15_db?charset=utf8'
+DB_URI = 'mysql://team03_15:jTevjFfpZdTYTTy@localhost:3306/team03_15_db?charset=utf8'
 
 # Ensures that all nodes use the same cache server when clustering
 USE_CACHE_FOR_POLLING = True
