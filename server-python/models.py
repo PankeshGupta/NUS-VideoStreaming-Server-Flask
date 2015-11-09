@@ -11,7 +11,9 @@ from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy import String
 from sqlalchemy import event
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import backref
 from sqlalchemy.orm import composite
+from sqlalchemy.orm import relationship
 
 from caching import cache
 from video_repr import VideoRepresentation
@@ -80,6 +82,9 @@ class VideoSegment(Base, CsMixin):
     # media name for each type of playlist
     media_mpd = Column(String(255), nullable=True)
     media_m3u8 = Column(String(255), nullable=True)
+
+    # relationship
+    video = relationship(Video, backref=backref("segments", cascade="all, delete-orphan"))
 
     __table_args__ = (PrimaryKeyConstraint(video_id, segment_id, name='cs_segments_pk'), {},)
 

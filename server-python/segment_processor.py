@@ -154,8 +154,6 @@ def transcode_segment(video_id, segment_id):
         mp_pool.close()
         mp_pool.join()
 
-        # transcode_segment_for_repr(segment, video.repr_1)
-
     except:
         logger.error("Error processing video segment [%s, %s]: %s" % (
             segment.video_id, segment.segment_id,
@@ -169,6 +167,14 @@ def transcode_segment(video_id, segment_id):
     segment.repr_2_status = task_status[1]
     segment.repr_3_status = task_status[2]
 
+    video = find_video(video_id=video_id)
+    if video is None:
+        # video has been deleted while the encoding was going on
+        # clean up the files
+        logger.info("Video [%s] has been deleted during the transcoding" % segment.video_id)
+        # todo enqueue a task to clean up the files
+        return False
+
     try:
         session.add(segment)
         session.commit()
@@ -177,9 +183,9 @@ def transcode_segment(video_id, segment_id):
     except:
         session.rollback()
         logger.error("Error processing video segment [%s, %s]: %s" %
-                    (segment.video_id,
-                     segment.segment_id,
-                     traceback.format_exc()))
+                     (segment.video_id,
+                      segment.segment_id,
+                      traceback.format_exc()))
 
         return False
 
