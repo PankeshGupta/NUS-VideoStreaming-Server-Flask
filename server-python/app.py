@@ -64,7 +64,6 @@ def index():
 # serves static files during development
 @app.route('/app/<path:path>')
 def send_js(path):
-    print "requesting %s" % path
     return send_from_directory('static/app', path)
 
 
