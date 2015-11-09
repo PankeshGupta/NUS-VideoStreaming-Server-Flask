@@ -1,8 +1,7 @@
 package com.fishball.cs5248.test;
 
-import retrofit.http.Body;
-import retrofit.http.GET;
-import retrofit.http.POST;
+import retrofit.http.*;
+import retrofit.mime.TypedFile;
 import rx.Observable;
 
 import java.util.List;
@@ -21,5 +20,10 @@ public interface Api {
     @GET("/livestreams")
     Observable<List<Video>> getLiveStreams();
 
+    @Multipart
+    @POST("/video")
+    Observable<VideoSegment> createSegment(@Part("video_id") Long videoId,
+                                           @Part("segment_id") Long segmentId,
+                                           @Part("data") TypedFile segmentFile);
 
 }

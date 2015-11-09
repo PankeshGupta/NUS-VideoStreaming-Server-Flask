@@ -195,6 +195,16 @@ class VideoSegmentResource(Resource):
 
         return segment
 
+
+class VideoSegmentListResource(Resource):
+    @marshal_with(video_segment_fields)
+    def get(self, video_id):
+        segments = session \
+            .query(VideoSegment) \
+            .filter(VideoSegment.video_id == video_id) \
+            .all()
+        return segments
+
     @marshal_with(video_segment_fields)
     def post(self):
         parse_args = segment_parser.parse_args()
@@ -222,7 +232,9 @@ class VideoSegmentResource(Resource):
         upload_success = True
 
         try:
-            parse_args['data'].save(segment.original_path)
+            # processing the uploaded file
+            uploaded_file = parse_args['data']
+            uploaded_file.save(segment.original_path)
             segment.repr_1_status = 'PROCESSING'
             segment.repr_2_status = 'PROCESSING'
             segment.repr_3_status = 'PROCESSING'
@@ -267,13 +279,3 @@ class VideoSegmentResource(Resource):
     def _enqueue_segment_task(segment):
         # do this in the background so we don't block the request
         gm_client.submit_job('cs2015_team03_segmentation', segment, background=True)
-
-
-class VideoSegmentListResource(Resource):
-    @marshal_with(video_segment_fields)
-    def get(self, video_id):
-        segments = session \
-            .query(VideoSegment) \
-            .filter(VideoSegment.video_id == video_id) \
-            .all()
-        return segments

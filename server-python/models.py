@@ -32,7 +32,7 @@ class Video(Base, CsMixin):
     created_at = Column(DateTime, nullable=False, default=datetime.now, index=True)
 
     type = Column(Enum('VOD', 'LIVE', name='cs_video_types'), nullable=False, default='LIVE')
-    status = Column(Enum('EMPTY', 'OK', 'ERROR', name='cs_video_status_types'), nullable=False, default='EMPTY')
+    status = Column(Enum('EMPTY', 'UPLOADING', 'OK', 'ERROR'), nullable=False, default='EMPTY')
 
     # the count is only available after all segments are uploaded
     segment_count = Column(Integer, nullable=False, default=0)
@@ -133,5 +133,9 @@ if __name__ == "__main__":
     from settings import DB_URI
 
     engine = create_engine(DB_URI)
+
+    print "Dropping all tables"
     Base.metadata.drop_all(engine)
+
+    print "Creating all tables"
     Base.metadata.create_all(engine)
