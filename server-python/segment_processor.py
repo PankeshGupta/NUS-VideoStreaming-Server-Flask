@@ -169,10 +169,19 @@ def transcode_segment(video_id, segment_id):
     segment.repr_2_status = task_status[1]
     segment.repr_3_status = task_status[2]
 
-    session.add(segment)
-    session.commit()
+    try:
+        session.add(segment)
+        session.commit()
+        logger.info("Finished processing video segment [%s, %s]" % (segment.video_id, segment.segment_id))
 
-    logger.info("Finished processing video segment [%s, %s]" % (segment.video_id, segment.segment_id))
+    except:
+        session.rollback()
+        logger.error("Error processing video segment [%s, %s]: %s" %
+                    (segment.video_id,
+                     segment.segment_id,
+                     traceback.format_exc()))
+
+        return False
 
     return True
 

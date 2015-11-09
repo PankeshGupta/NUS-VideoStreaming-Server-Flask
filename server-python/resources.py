@@ -120,9 +120,15 @@ class VideoResource(Resource):
         if not video:
             abort(404, message="Video {} doesn't exist".format(video_id))
 
-        session.delete(video)
-        session.commit()
-        logger.info("Deleted video [%s]" % video_id)
+        try:
+            session.delete(video)
+            session.commit()
+            logger.info("Deleted video [%s]" % video_id)
+
+        except:
+            session.rollback()
+            logger.error("Error persistent data: %s" % traceback.format_exc())
+            raise
 
         return {}, 204
 
@@ -138,9 +144,16 @@ class VideoResource(Resource):
             .first()
 
         video.title = parsed_args['title']
-        session.add(video)
-        session.commit()
-        logger.info("Updated video [%s]" % video_id)
+
+        try:
+            session.add(video)
+            session.commit()
+            logger.info("Updated video [%s]" % video_id)
+
+        except:
+            session.rollback()
+            logger.error("Error persistent data: %s" % traceback.format_exc())
+            raise
 
         return video, 201
 
@@ -185,8 +198,13 @@ class VideoListResource(Resource):
         new_video.uri_mpd = None
         new_video.uri_m3u8 = None
 
-        session.add(new_video)
-        session.commit()
+        try:
+            session.add(new_video)
+            session.commit()
+
+        except:
+            session.rollback()
+            raise
 
         return new_video, 201
 
@@ -267,10 +285,13 @@ class VideoSegmentListResource(Resource):
             session.commit()
 
         except:
+            session.rollback()
+
             # clean up the uploaded file
             if os.path.exists(segment.original_path):
                 os.remove(segment.original_path)
 
+            logger.error("Error persistent data: %s" % traceback.format_exc())
             raise
 
         if upload_success:

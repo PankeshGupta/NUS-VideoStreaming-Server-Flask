@@ -5,6 +5,8 @@ import platform
 import shutil
 from subprocess import call, STDOUT
 
+import time
+
 from video_repr import Constants as Repr
 from video_repr import DefaultRepresentations
 
@@ -54,7 +56,9 @@ def encode_x264(file_src, file_target, bitrate, fps, width, height, audio_asfq, 
     ), log_file)
 
     # since convert.sh does not return a meaningful exit code,
-    # we check the result file
+    # we check the result file after a short wait
+    time.sleep(0.2)
+
     return os.path.exists(file_target) and os.path.getsize(file_target) > 0
 
 
@@ -78,7 +82,9 @@ def encode_mp42ts(file_src, file_target, log=True):
 
     exit_code = exec_command('/usr/local/bin/mp42ts "%s" "%s"' % (file_src, file_target), log_file)
 
-    # check both the exit code and the file
+    # check both the exit code and the file after a short wait
+    time.sleep(0.2)
+
     return exit_code == 0 and os.path.exists(file_target) and os.path.getsize(file_target) > 0
 
 
