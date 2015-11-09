@@ -6,9 +6,10 @@ import os
 import traceback
 
 from gearman import GearmanWorker
+from sqlalchemy.orm import scoped_session
 
 import transcoding
-from db import session
+from db import session_factory
 from models import Video, VideoSegment
 from names import SEGMENT_TASK_NAME
 from settings import DIR_SEGMENT_TRANSCODED
@@ -17,6 +18,13 @@ from settings import GEARMAND_HOST_PORT
 # make sure the output dir exists
 if not os.path.exists(DIR_SEGMENT_TRANSCODED):
     os.makedirs(DIR_SEGMENT_TRANSCODED)
+
+#################
+# ORM session
+#################
+
+session = scoped_session(session_factory)
+
 
 #################
 # Serialization

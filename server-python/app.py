@@ -6,12 +6,16 @@ from flask import Flask
 from flask import render_template
 from flask import send_from_directory
 from flask.ext.restful import Api
+from flask_sqlalchemy_session import flask_scoped_session
 
+from db import session_factory
 from settings import SUPER_USERS
 
 app = Flask(__name__, static_url_path='')
-app.config['SECRET_KEY'] = 'who knows this?'
+flask_scoped_session(session_factory, app)
 
+# authentication for admin resources
+app.config['SECRET_KEY'] = 'who knows this?'
 from admin_auth import auth
 
 #################

@@ -9,12 +9,12 @@ from flask.ext.restful import abort
 from flask.ext.restful import fields
 from flask.ext.restful import marshal_with
 from flask.ext.restful import reqparse
+from flask_sqlalchemy_session import current_session as session
 from gearman import GearmanClient
 from sqlalchemy import desc
 from werkzeug.datastructures import FileStorage
 
 from admin_auth import auth
-from db import session
 from models import Video
 from models import VideoListCache
 from models import VideoSegment
@@ -241,9 +241,21 @@ class VideoSegmentListResource(Resource):
         segment.segment_id = parse_args['segment_id']
 
         # check the video ID
-        if not self._fast_check_video_id(segment.video_id):
+        video = session \
+            .query(Video) \
+            .filter(Video.video_id == video_id) \
+            .first()
+
+        if not video:
             abort(404, message="Video (%s) doesn't exist" % segment.video_id)
             return
+
+        # update the segment count if needed
+        expected_segment_count = segment.segment_id + 1
+        if video.segment_count < expected_segment_count:
+            video.segment_count = expected_segment_count
+            session.add(video)
+            session.flush()
 
         segment.uri_mpd = None
         segment.uri_m3u8 = None
