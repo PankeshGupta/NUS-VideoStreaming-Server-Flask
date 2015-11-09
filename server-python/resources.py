@@ -1,20 +1,28 @@
 import logging
+import os
+import traceback
 from datetime import datetime
+
 from flask import request
 from flask.ext.restful import Resource
 from flask.ext.restful import abort
 from flask.ext.restful import fields
 from flask.ext.restful import marshal_with
 from flask.ext.restful import reqparse
+from gearman import GearmanClient
 from sqlalchemy import desc
 from werkzeug.datastructures import FileStorage
-from models import VideoListCache
+
 from admin_auth import auth
 from db import session
-from video_repr import DefaultRepresentations as Reprs
 from models import Video
+from models import VideoListCache
 from models import VideoSegment
+from settings import DIR_SEGMENT_TRANSCODED
+from settings import DIR_SEGMENT_UPLOADED
+from settings import GEARMAND_HOST_PORT
 from settings import USE_CACHE_FOR_POLLING
+from video_repr import DefaultRepresentations as Reprs
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +65,25 @@ video_segment_fields = {
     'uri_m3u8': fields.String,
 }
 
+# request parser for video
 video_parser = reqparse.RequestParser()
 video_parser.add_argument('title', type=str)
+
+# request parser for segment (including upload)
+segment_parser = reqparse.RequestParser()
+segment_parser.add_argument('video_id', type=long)
+segment_parser.add_argument('segment_id', type=long)
+segment_parser.add_argument('data', type=FileStorage, location='files')
+
+# ensure the directory exists
+if not os.path.exists(DIR_SEGMENT_UPLOADED):
+    os.makedirs(DIR_SEGMENT_UPLOADED)
+
+if not os.path.exists(DIR_SEGMENT_TRANSCODED):
+    os.makedirs(DIR_SEGMENT_TRANSCODED)
+
+# gearman job queue
+gm_client = GearmanClient([GEARMAND_HOST_PORT])
 
 
 class VideoResource(Resource):
@@ -170,22 +195,83 @@ class VideoSegmentResource(Resource):
 
         return segment
 
+    @marshal_with(video_segment_fields)
+    def post(self):
+        parse_args = segment_parser.parse_args()
+
+        segment = VideoSegment()
+        segment.video_id = parse_args['video_id']
+        segment.segment_id = parse_args['segment_id']
+
+        # check the video ID
+        if not self._fast_check_video_id(segment.video_id):
+            abort(404, message="Video (%s) doesn't exist" % segment.video_id)
+            return
+
+        segment.uri_mpd = None
+        segment.uri_m3u8 = None
+
+        segment.original_extention = parse_args["original_extention"]
+        segment.original_path = "%s/%s/%s.%s" % (
+            DIR_SEGMENT_UPLOADED,
+            segment.video_id,
+            segment.segment_id,
+            segment.segment_id
+        )
+
+        upload_success = True
+
+        try:
+            parse_args['data'].save(segment.original_path)
+            segment.repr_1_status = 'PROCESSING'
+            segment.repr_2_status = 'PROCESSING'
+            segment.repr_3_status = 'PROCESSING'
+
+        except:
+            upload_success = False
+            logger.error("Error processing segment upload: %r" % traceback.format_exc())
+            segment.repr_1_status = 'ERROR'
+            segment.repr_2_status = 'ERROR'
+            segment.repr_3_status = 'ERROR'
+
+        try:
+            session.add(segment)
+            session.commit()
+
+        except:
+            # clean up the uploaded file
+            if os.path.exists(segment.original_path):
+                os.remove(segment.original_path)
+
+            raise
+
+        if upload_success:
+            self._enqueue_segment_task(segment)
+
+        return segment, 201
+
+    def _fast_check_video_id(self, video_id):
+        has_id = VideoListCache.has_id(video_id)
+
+        if has_id is None or not isinstance(has_id, bool):
+            video = session \
+                .query(Video) \
+                .filter(Video.video_id == video_id) \
+                .first()
+            return video is not None
+
+        return has_id
+
+    def _enqueue_segment_task(self, segment):
+        # do this in the background so we don't block the request
+        gm_client.submit_job('cs2015_team03_segmentation', segment, background=True)
+
 
 class VideoSegmentListResource(Resource):
-    @marshal_with(video_fields)
+    @marshal_with(video_segment_fields)
     def get(self, video_id):
         segments = session \
             .query(VideoSegment) \
             .filter(VideoSegment.video_id == video_id) \
             .all()
         return segments
-
-
-class UploadWavAPI(Resource):
-    def post(self):
-        parse = reqparse.RequestParser()
-        parse.add_argument('video_id', type=long)
-        parse.add_argument('video', type=FileStorage, location='files')
-        args = parse.parse_args()
-
-        args['video'].save("/Users/lpthanh/%s.jpg" % args["id"])

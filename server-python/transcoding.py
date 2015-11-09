@@ -11,8 +11,7 @@ from video_repr import DefaultRepresentations
 tool_platform_subdir = "ix"
 
 # Added this because Ubuntu needs a different version of the convert.sh script
-platform, _1, _2 = platform.linux_distribution()
-if platform == "Ubuntu":
+if platform.linux_distribution()[0] == "Ubuntu":
     tool_platform_subdir = "ubuntu"
 
 
@@ -61,8 +60,8 @@ def encode_mp42ts(file_src, file_target):
     prepare_target_dir(file_target)
     exit_code = call('mp42ts "%s" "%s"' % (file_src, file_target), shell=True)
 
-    # success exit code
-    return exit_code == 0
+    # check both the exit code and the file
+    return exit_code == 0 and os.path.exists(file_target) and os.path.getsize(file_target) > 0
 
 
 if __name__ == "__main__":

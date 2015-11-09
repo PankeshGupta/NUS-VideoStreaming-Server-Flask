@@ -67,14 +67,18 @@ class VideoSegment(Base, CsMixin):
     video_id = Column(Integer, ForeignKey(Video.video_id), index=True)
     segment_id = Column(Integer, autoincrement=False)
 
+    # file location for uploaded file
+    original_path = Column(String(255), nullable=True)
+    original_extention = Column(String(50), nullable=False)
+
     # segment status for each representation
     repr_1_status = Column(Enum('OK', 'ERROR', 'PROCESSING', 'NIL'), nullable=False, default='NIL')
     repr_2_status = Column(Enum('OK', 'ERROR', 'PROCESSING', 'NIL'), nullable=False, default='NIL')
     repr_3_status = Column(Enum('OK', 'ERROR', 'PROCESSING', 'NIL'), nullable=False, default='NIL')
 
-    # uri for each type of playlist
-    uri_mpd = Column(String(255), nullable=True)
-    uri_m3u8 = Column(String(255), nullable=True)
+    # media name for each type of playlist
+    media_mpd = Column(String(255), nullable=True)
+    media_m3u8 = Column(String(255), nullable=True)
 
     __table_args__ = (PrimaryKeyConstraint(video_id, segment_id, name='cs_segments_pk'), {},)
 
@@ -86,14 +90,29 @@ class VideoListCache(object):
     @classmethod
     def clear(cls):
         cache.delete("cs2015_team03_all_videos")
+        cache.delete("cs2015_team03_all_video_ids")
 
     @classmethod
     def get(cls):
         return cache.get("cs2015_team03_all_videos")
 
     @classmethod
+    def has_id(cls, video_id):
+        video_ids = cache.get("cs2015_team03_all_video_ids")
+        if video_ids is None:
+            return None
+
+        return video_id in video_ids
+
+    @classmethod
     def set(cls, video_list):
         cache.set("cs2015_team03_all_videos", video_list, timeout=5 * 60)
+
+        # cache the video IDs
+        video_ids = set()
+        for video in video_list:
+            video_ids.add(video.video_id)
+        cache.set("cs2015_team03_all_video_ids", video_ids, timeout=5 * 60)
 
     @staticmethod
     def on_data_changed(target, value, oldvalue):

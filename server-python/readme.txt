@@ -3,6 +3,7 @@
 cd server_python
 python models.py
 
+
 2. Build the static files for the admin UI
 ===========================================
 2.1. First, install webpack:
@@ -21,7 +22,16 @@ bundle.js, run:
 
 npm run-script watch
 
+
 3. Install the transcoding utilities
 ===========================================
 Download and install Bento4 from: https://www.bento4.com
 Copy the binaries files to /usr/local/bin.
+
+
+3. Start the app
+===========================================
+Start these in separate terminals:
+
+./segment_processor.py
+./app.py

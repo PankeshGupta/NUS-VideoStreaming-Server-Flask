@@ -9,8 +9,18 @@ CACHE_BACKEND = 'MEMCACHED'
 # Memcached
 MEMCACHED_HOST_PORT = 'localhost:11211'
 
-# Redis
+# Redis --- unused
 REDIS_PORT = '8009'
+
+# Gearman
+GEARMAND_HOST_PORT = 'localhost:4730'
+
+
+# Directory for uploaded segment files
+DIR_SEGMENT_UPLOADED = 'test_videos/upload'
+
+# Directory for transcoded files
+DIR_SEGMENT_TRANSCODED = 'test_videos/sm'
 
 
 SUPER_USERS = {
