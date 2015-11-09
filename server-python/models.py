@@ -70,7 +70,7 @@ class VideoSegment(Base, CsMixin):
 
     # file location for uploaded file
     original_path = Column(String(255), nullable=True)
-    original_extention = Column(String(50), nullable=False)
+    original_extension = Column(String(50), nullable=False)
 
     # segment status for each representation
     repr_1_status = Column(Enum('OK', 'ERROR', 'PROCESSING', 'NIL'), nullable=False, default='NIL')

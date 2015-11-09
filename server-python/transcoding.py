@@ -76,7 +76,7 @@ def encode_mp42ts(file_src, file_target, log=True):
     # log to file or to /dev/null
     log_file = ("%s.log" % file_target) if log else None
 
-    exit_code = exec_command('mp42ts "%s" "%s"' % (file_src, file_target), log_file)
+    exit_code = exec_command('/usr/local/bin/mp42ts "%s" "%s"' % (file_src, file_target), log_file)
 
     # check both the exit code and the file
     return exit_code == 0 and os.path.exists(file_target) and os.path.getsize(file_target) > 0

@@ -18,6 +18,7 @@ from db import session
 from models import Video
 from models import VideoListCache
 from models import VideoSegment
+from names import SEGMENT_TASK_NAME
 from settings import DIR_SEGMENT_TRANSCODED
 from settings import DIR_SEGMENT_UPLOADED
 from settings import GEARMAND_HOST_PORT
@@ -58,11 +59,13 @@ video_fields = {
 video_segment_fields = {
     'segment_id': fields.Integer,
     'video_id': fields.Integer,
+    'original_path': fields.String,
+    'original_extension': fields.String,
     'repr_1_status': fields.String,
     'repr_2_status': fields.String,
     'repr_3_status': fields.String,
-    'uri_mpd': fields.String,
-    'uri_m3u8': fields.String,
+    'media_mpd': fields.String,
+    'media_m3u8': fields.String,
 }
 
 # request parser for video
@@ -71,8 +74,8 @@ video_parser.add_argument('title', type=str)
 
 # request parser for segment (including upload)
 segment_parser = reqparse.RequestParser()
-segment_parser.add_argument('video_id', type=long)
-segment_parser.add_argument('segment_id', type=long)
+segment_parser.add_argument('segment_id', type=long, location='form')
+segment_parser.add_argument('original_extension', type=str, location='form')
 segment_parser.add_argument('data', type=FileStorage, location='files')
 
 # ensure the directory exists
@@ -84,6 +87,12 @@ if not os.path.exists(DIR_SEGMENT_TRANSCODED):
 
 # gearman job queue
 gm_client = GearmanClient([GEARMAND_HOST_PORT])
+
+# importing pickle
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 
 class VideoResource(Resource):
@@ -206,11 +215,11 @@ class VideoSegmentListResource(Resource):
         return segments
 
     @marshal_with(video_segment_fields)
-    def post(self):
+    def post(self, video_id):
         parse_args = segment_parser.parse_args()
 
         segment = VideoSegment()
-        segment.video_id = parse_args['video_id']
+        segment.video_id = video_id
         segment.segment_id = parse_args['segment_id']
 
         # check the video ID
@@ -221,18 +230,25 @@ class VideoSegmentListResource(Resource):
         segment.uri_mpd = None
         segment.uri_m3u8 = None
 
-        segment.original_extention = parse_args["original_extention"]
+        segment.original_extension = parse_args["original_extension"]
         segment.original_path = "%s/%s/%s.%s" % (
             DIR_SEGMENT_UPLOADED,
             segment.video_id,
             segment.segment_id,
-            segment.segment_id
+            segment.original_extension
         )
 
         upload_success = True
 
         try:
             # processing the uploaded file
+
+            # creating the directory
+            dir_path = os.path.dirname(segment.original_path)
+            if not os.path.exists(dir_path) \
+                    or not os.path.isdir(dir_path):
+                os.mkdir(dir_path)
+
             uploaded_file = parse_args['data']
             uploaded_file.save(segment.original_path)
             segment.repr_1_status = 'PROCESSING'
@@ -278,4 +294,5 @@ class VideoSegmentListResource(Resource):
     @staticmethod
     def _enqueue_segment_task(segment):
         # do this in the background so we don't block the request
-        gm_client.submit_job('cs2015_team03_segmentation', segment, background=True)
+        gm_client.submit_job(SEGMENT_TASK_NAME, pickle.dumps((segment.video_id, segment.segment_id)), background=True)
+        logger.info("Submitted task into queue for segment [%s, %s]" % (segment.video_id, segment.segment_id))
