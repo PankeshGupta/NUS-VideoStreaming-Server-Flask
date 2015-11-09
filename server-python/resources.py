@@ -3,7 +3,7 @@ import os
 import traceback
 from datetime import datetime
 
-from flask import request
+from flask import request, make_response
 from flask.ext.restful import Resource
 from flask.ext.restful import abort
 from flask.ext.restful import fields
@@ -11,7 +11,7 @@ from flask.ext.restful import marshal_with
 from flask.ext.restful import reqparse
 from flask_sqlalchemy_session import current_session as session
 from gearman import GearmanClient
-from sqlalchemy import desc
+from sqlalchemy import desc, asc
 from werkzeug.datastructures import FileStorage
 
 from admin_auth import auth
@@ -19,6 +19,7 @@ from models import Video
 from models import VideoListCache
 from models import VideoSegment
 from names import SEGMENT_TASK_NAME
+from playlist import gen_mpd, gen_m3u8_root, gen_m3u8_stream
 from settings import DIR_SEGMENT_TRANSCODED
 from settings import DIR_SEGMENT_UPLOADED
 from settings import GEARMAND_HOST_PORT
@@ -77,6 +78,10 @@ segment_parser = reqparse.RequestParser()
 segment_parser.add_argument('segment_id', type=long, location='form')
 segment_parser.add_argument('original_extension', type=str, location='form')
 segment_parser.add_argument('data', type=FileStorage, location='files')
+
+# request parser for the ending request
+video_end_parser = reqparse.RequestParser()
+video_end_parser.add_argument('last_segment_id', type=long, location='form')
 
 # ensure the directory exists
 if not os.path.exists(DIR_SEGMENT_UPLOADED):
@@ -239,6 +244,10 @@ class VideoSegmentListResource(Resource):
         segment = VideoSegment()
         segment.video_id = video_id
         segment.segment_id = parse_args['segment_id']
+        segment.status = 'NIL'
+        segment.repr_1_status = 'NIL'
+        segment.repr_2_status = 'NIL'
+        segment.repr_3_status = 'NIL'
 
         # check the video ID
         video = session \
@@ -254,6 +263,7 @@ class VideoSegmentListResource(Resource):
         expected_segment_count = segment.segment_id + 1
         if video.segment_count < expected_segment_count:
             video.segment_count = expected_segment_count
+            video.status = 'UPLOADING'
             session.add(video)
             session.flush()
 
@@ -281,9 +291,6 @@ class VideoSegmentListResource(Resource):
 
             uploaded_file = parse_args['data']
             uploaded_file.save(segment.original_path)
-            segment.repr_1_status = 'PROCESSING'
-            segment.repr_2_status = 'PROCESSING'
-            segment.repr_3_status = 'PROCESSING'
 
         except:
             upload_success = False
@@ -329,3 +336,150 @@ class VideoSegmentListResource(Resource):
         # do this in the background so we don't block the request
         gm_client.submit_job(SEGMENT_TASK_NAME, pickle.dumps((segment.video_id, segment.segment_id)), background=True)
         logger.info("Submitted task into queue for segment [%s, %s]" % (segment.video_id, segment.segment_id))
+
+
+class VideoEndResource(Resource):
+    @marshal_with(video_fields)
+    def post(self, video_id):
+        parse_args = video_end_parser.parse_args()
+
+        last_segment_id = parse_args['last_segment_id']
+        if not last_segment_id:
+            abort(400, message="Expecting last_segment_id")
+            return None
+
+        # check the video
+        video = session \
+            .query(Video) \
+            .filter(Video.video_id == video_id) \
+            .first()
+
+        if not video:
+            abort(404, message="Video (%s) doesn't exist" % video_id)
+            return None
+
+        video.segment_count = last_segment_id + 1
+        video.type = 'VOD'
+        video.status = 'OK'
+
+        # save the playlist files to file system
+
+
+        try:
+            session.add(video)
+            session.commit()
+
+        except:
+            session.rollback()
+            logger.error("Error persistent data: %s" % traceback.format_exc())
+            raise
+
+        return video
+
+
+class LiveMpdResource(Resource):
+    def get(self, video_id):
+
+        # check the video
+        video = session \
+            .query(Video) \
+            .filter(Video.video_id == video_id) \
+            .first()
+
+        if not video:
+            abort(404, message="Video (%s) doesn't exist" % video_id)
+            return None
+
+        last_obtained_segment = request.args.get('last_segment_id', None)
+        response_data = LiveMpdResource.build_mpd_string("", video, last_obtained_segment)
+
+        response = make_response(response_data)
+        response.headers['content-type'] = 'application/dash+xml'
+        response.headers['content-disposition'] = 'attachment; filename="%s.mpd"' % video.video_id
+
+        return response
+
+    @staticmethod
+    def build_mpd_string(base_url, video, last_obtained_segment=None):
+        segments = []
+        if last_obtained_segment is not None:
+            segments = session \
+                .query(VideoSegment) \
+                .filter((VideoSegment.video_id == video.video_id) &
+                        (VideoSegment.segment_id > last_obtained_segment) &
+                        (VideoSegment.status == 'OK')) \
+                .order_by(asc(VideoSegment.segment_id)) \
+                .all()
+        else:
+            segments = session \
+                .query(VideoSegment) \
+                .filter((VideoSegment.video_id == video.video_id) &
+                        (VideoSegment.status == 'OK')) \
+                .order_by(asc(VideoSegment.segment_id)) \
+                .all()
+
+        repr_list = [video.repr_1, video.repr_2, video.repr_3]
+        return gen_mpd(base_url=base_url,
+                       repr_list=repr_list,
+                       segment_duration_millis=video.segment_duration,
+                       segment_list=segments)
+
+
+class LiveM3U8RootResource(Resource):
+    def get(self, video_id):
+        # check the video
+        video = session \
+            .query(Video) \
+            .filter(Video.video_id == video_id) \
+            .first()
+
+        if not video:
+            abort(404, message="Video (%s) doesn't exist" % video_id)
+            return None
+
+        response_data = LiveM3U8RootResource.build_root_m3u8_string("", video)
+
+        response = make_response(response_data)
+        response.headers['content-type'] = 'application/vnd.apple.mpegurl'
+        response.headers['content-disposition'] = 'attachment; filename="%s.m3u8"' % video.video_id
+
+        return response
+
+    @staticmethod
+    def build_root_m3u8_string(base_url, video):
+        repr_list = [video.repr_1, video.repr_2, video.repr_3]
+        return gen_m3u8_root(base_url=base_url,
+                             repr_list=repr_list)
+
+
+class LiveM3U8StreamResource(Resource):
+    def get(self, video_id, repr_name):
+        # check the video
+        video = session \
+            .query(Video) \
+            .filter(Video.video_id == video_id) \
+            .first()
+
+        if not video:
+            abort(404, message="Video (%s) doesn't exist" % video_id)
+            return None
+
+        response_data = LiveM3U8StreamResource.build_stream_m3u8_string(video)
+
+        response = make_response(response_data)
+        response.headers['content-type'] = 'application/vnd.apple.mpegurl'
+        response.headers['content-disposition'] = 'attachment; filename="%s.%s.m3u8"' % (video.video_id, repr_name)
+
+        return response
+
+    @staticmethod
+    def build_stream_m3u8_string(video):
+        segments = session \
+            .query(VideoSegment) \
+            .filter((VideoSegment.video_id == video.video_id) &
+                    (VideoSegment.status == 'OK')) \
+            .order_by(asc(VideoSegment.segment_id)) \
+            .all()
+
+        return gen_m3u8_stream(segment_duration_seconds=video.segment_duration / 1000,
+                               segment_list=segments)

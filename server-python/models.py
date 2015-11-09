@@ -74,6 +74,9 @@ class VideoSegment(Base, CsMixin):
     original_path = Column(String(255), nullable=True)
     original_extension = Column(String(50), nullable=False)
 
+    # overall status
+    status = Column(Enum('OK', 'ERROR', 'PROCESSING', 'NIL'), nullable=False, default='NIL')
+
     # segment status for each representation
     repr_1_status = Column(Enum('OK', 'ERROR', 'PROCESSING', 'NIL'), nullable=False, default='NIL')
     repr_2_status = Column(Enum('OK', 'ERROR', 'PROCESSING', 'NIL'), nullable=False, default='NIL')

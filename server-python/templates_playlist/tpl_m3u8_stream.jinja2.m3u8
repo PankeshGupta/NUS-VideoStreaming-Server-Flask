@@ -3,6 +3,6 @@
 #EXT-X-MEDIA-SEQUENCE:0
 {% for segment in segment_list %}
 #EXTINF:{{ segment_duration_seconds }}, no desc
-{{ segment.uri_m3u8 }}
+{{ segment.media_m3u8 }}
 {% endfor %}
 #EXT-X-ENDLIST

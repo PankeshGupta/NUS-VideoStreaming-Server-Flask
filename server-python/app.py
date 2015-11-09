@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
 import logging
-
 from flask import Flask
 from flask import render_template
 from flask import send_from_directory
 from flask.ext.restful import Api
 from flask_sqlalchemy_session import flask_scoped_session
-
 from db import session_factory
 from settings import SUPER_USERS
 
@@ -41,11 +39,21 @@ from resources import VideoListResource
 from resources import VideoResource
 from resources import VideoSegmentResource
 from resources import VideoSegmentListResource
+from resources import VideoEndResource
+from resources import LiveMpdResource
+from resources import LiveM3U8RootResource
+from resources import LiveM3U8StreamResource
 
 api.add_resource(VideoListResource, '/videos', endpoint='video_list')
 api.add_resource(VideoResource, '/video/<int:video_id>', endpoint='video')
+api.add_resource(VideoEndResource, '/video_end/<int:video_id>', endpoint='video_end')
+
 api.add_resource(VideoSegmentListResource, '/video_segment/<int:video_id>', endpoint='video_segment_list')
 api.add_resource(VideoSegmentResource, '/video_segment/<int:video_id>/<int:segment_id>', endpoint='video_segment')
+
+api.add_resource(LiveMpdResource, '/live_mpd/<int:video_id>.mpd', endpoint='live_mpd')
+api.add_resource(LiveM3U8RootResource, '/live_m3u8/<int:video_id>.m3u8', endpoint='live_m3u8')
+api.add_resource(LiveM3U8StreamResource, '/live_m3u8/<int:video_id>.<string:repr_name>.m3u8', endpoint='live_m3u8_stream')
 
 
 #################
@@ -69,6 +77,12 @@ def index():
 @app.route('/app/<path:path>')
 def send_js(path):
     return send_from_directory('static/app', path)
+
+
+# serves video files
+@app.route('/videos/<path:path>')
+def send_video(path):
+    return send_from_directory('test_videos/sm', path)
 
 
 if __name__ == '__main__':

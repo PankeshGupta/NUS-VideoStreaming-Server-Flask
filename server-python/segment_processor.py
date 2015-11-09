@@ -8,10 +8,11 @@ import traceback
 from gearman import GearmanWorker
 from sqlalchemy.orm import scoped_session
 
-import transcoding
+import video_util
 from db import session_factory
 from models import Video, VideoSegment
 from names import SEGMENT_TASK_NAME
+from playlist import output_mpd_to_file, output_m3u8_stream_to_files
 from settings import DIR_SEGMENT_TRANSCODED
 from settings import GEARMAND_HOST_PORT
 
@@ -24,7 +25,6 @@ if not os.path.exists(DIR_SEGMENT_TRANSCODED):
 #################
 
 session = scoped_session(session_factory)
-
 
 #################
 # Serialization
@@ -110,7 +110,7 @@ def transcode_segment_for_repr(arg_tuple):
                      repr.name,
                      src))
 
-        success = transcoding.encode_x264_repr(src, repr_output_mpd, repr)
+        success = video_util.encode_x264_repr(src, repr_output_mpd, repr)
 
         # for M3U8
         if success is True:
@@ -121,7 +121,7 @@ def transcode_segment_for_repr(arg_tuple):
                          repr.name,
                          src))
 
-            success = transcoding.encode_mp42ts(repr_output_mpd, repr_output_m3u8)
+            success = video_util.encode_mp42ts(repr_output_mpd, repr_output_m3u8)
 
     except:
         logger.error("Failed to encoding segment [%s, %s]: %s" %
@@ -149,8 +149,25 @@ def transcode_segment(video_id, segment_id):
         logger.error("Segment file does not exist: %s" % segment.original_path)
         return False
 
-    segment.media_mpd = "%s.mp4" % segment.segment_id
-    segment.media_m3u8 = "%s.ts" % segment.segment_id
+    # update status to processing temporarily
+    segment.status = 'PROCESSING'
+    segment.repr_1_status = 'PROCESSING'
+    segment.repr_2_status = 'PROCESSING'
+    segment.repr_3_status = 'PROCESSING'
+
+    try:
+        session.add(segment)
+        session.commit()
+    except:
+        session.rollback()
+        logger.error("Error saving video segment to database [%s, %s]: %s" %
+                     (segment.video_id,
+                      segment.segment_id,
+                      traceback.format_exc()))
+        return False
+
+    segment.media_mpd = "%06d.mp4" % segment.segment_id
+    segment.media_m3u8 = "%06d.ts" % segment.segment_id
 
     repr_list = [video.repr_1, video.repr_2, video.repr_3]
 
@@ -170,10 +187,17 @@ def transcode_segment(video_id, segment_id):
         task_success = [False, False, False]
 
     # process the results
-    task_status = map(lambda s: 'NIL' if s is None else 'OK' if s is True else 'ERROR', task_success)
-    segment.repr_1_status = task_status[0]
-    segment.repr_2_status = task_status[1]
-    segment.repr_3_status = task_status[2]
+    task_statuses = map(lambda s: 'NIL' if s is None else 'OK' if s is True else 'ERROR', task_success)
+    segment.repr_1_status = task_statuses[0]
+    segment.repr_2_status = task_statuses[1]
+    segment.repr_3_status = task_statuses[2]
+
+    # the status is only OK if no repr had error
+    segment.status = 'OK'
+    for task_status in task_statuses:
+        if task_status == 'ERROR':
+            segment.status = 'ERROR'
+            break
 
     video = find_video(video_id=video_id)
     if video is None:
@@ -190,7 +214,24 @@ def transcode_segment(video_id, segment_id):
 
     except:
         session.rollback()
-        logger.error("Error processing video segment [%s, %s]: %s" %
+        logger.error("Error saving video segment to database [%s, %s]: %s" %
+                     (segment.video_id,
+                      segment.segment_id,
+                      traceback.format_exc()))
+
+        return False
+
+    # update the playlist file
+    try:
+        output_mpd_to_file(video, "%s/%s/%s.mpd" % (DIR_SEGMENT_TRANSCODED, segment.video_id, segment.video_id),
+                           "sm/%s" % segment.video_id)
+
+        output_m3u8_stream_to_files(video,
+                                    ["%s/%s/%s/stream.m3u8" % (DIR_SEGMENT_TRANSCODED, segment.video_id, repr.name)
+                                     for repr in repr_list])
+
+    except:
+        logger.error("Error updating play list file [%s, %s]: %s" %
                      (segment.video_id,
                       segment.segment_id,
                       traceback.format_exc()))
