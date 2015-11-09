@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import logging
+import multiprocessing as mp
 import os
+import traceback
 
 from gearman import GearmanWorker
 
@@ -60,12 +62,52 @@ def find_segment(video_id, segment_id):
     return segment
 
 
-def transcode_segment(segment):
-    video = find_video(video_id=segment.video_id)
+def transcode_segment_for_repr(segment, repr):
+    src = segment.original_path
+
+    repr_output_mpd = "%s/%s/%s/%s" % (
+        DIR_SEGMENT_TRANSCODED,
+        segment.video_id,
+        repr.name,
+        segment.media_mpd
+    )
+
+    repr_output_m3u8 = "%s/%s/%s/%s" % (
+        DIR_SEGMENT_TRANSCODED,
+        segment.video_id,
+        repr.name,
+        segment.media_m3u8
+    )
+
+    if repr is None:
+        return None
+
+    success = None
+    try:
+        # for MPD
+        logger.info("Encoding segment [%s, %s] for MPD, from: %s" % (segment.video_id, segment.segment_id, src))
+        success = transcoding.encode_x264_repr(src, repr_output_mpd, repr)
+
+        # for M3U8
+        if success is True:
+            # only encode ts if the last one succeeds
+            logger.info("Encoding segment [%s, %s] for M3U8, from: %s" % (segment.video_id, segment.segment_id, src))
+            success = transcoding.encode_mp42ts(repr_output_mpd, repr_output_m3u8)
+
+    except:
+        logger.error(
+            "Failed to encoding segment [%s, %s]: %s" % (segment.video_id, segment.segment_id, traceback.format_exc()))
+        success = False
+
+    return success
+
+
+def transcode_segment(video_id, segment_id):
+    video = find_video(video_id=video_id)
     if video is None:
         return
 
-    segment = find_segment(video_id=segment.video_id, segment_id=segment.segment_id)
+    segment = find_segment(video_id=video_id, segment_id=segment_id)
     if segment is None:
         return
 
@@ -73,47 +115,22 @@ def transcode_segment(segment):
         logger.error("Segment file does not exist: %s", segment.original_path)
         return
 
-    src = segment.original_path
-
     segment.media_mpd = "%s.mp4" % segment.segment_id
     segment.media_m3u8 = "%s.ts" % segment.segment_id
 
-    overall_success = []
+    repr_list = [video.repr_1, video.repr_2, video.repr_3]
 
-    for repr in [video.repr_1, video.repr_2, video.repr_3]:
-        repr_output_mpd = "%s/%s/%s/%s" % (
-            DIR_SEGMENT_TRANSCODED,
-            video.video_id,
-            repr.name,
-            segment.media_mpd
-        )
+    # running all transcoding tasks for this segment in parallel
+    mp_pool = mp.Pool(processes=len(repr_list))
+    task_success = mp_pool.map(transcode_segment_for_repr, [(segment, r) for r in repr_list])
+    mp_pool.close()
+    mp_pool.join()
 
-        repr_output_m3u8 = "%s/%s/%s/%s" % (
-            DIR_SEGMENT_TRANSCODED,
-            video.video_id,
-            repr.name,
-            segment.media_m3u8
-        )
-
-        success = True
-        try:
-            # for MPD
-            logger.info("Encoding segment [%s, %s] for MPD" % (segment.video_id, segment.segment_id))
-            success = transcoding.encode_x264_repr(src, repr_output_mpd, repr)
-
-            # for M3U8
-            if success is True:
-                # only encode ts if the last one succeeds
-                logger.info("Encoding segment [%s, %s] for M3U8" % (segment.video_id, segment.segment_id))
-                success = transcoding.encode_mp42ts(repr_output_mpd, repr_output_m3u8)
-        except:
-            success = False
-
-        overall_success.append(success)
-
-    segment.repr_1_status = 'OK' if overall_success[0] is True else 'ERROR'
-    segment.repr_2_status = 'OK' if overall_success[1] is True else 'ERROR'
-    segment.repr_3_status = 'OK' if overall_success[2] is True else 'ERROR'
+    # process the results
+    task_status = map(lambda s: 'NIL' if s is None else 'OK' if s is True else 'ERROR', task_success)
+    segment.repr_1_status = task_status[0]
+    segment.repr_2_status = task_status[1]
+    segment.repr_3_status = task_status[2]
 
     session.add(segment)
     session.commit()

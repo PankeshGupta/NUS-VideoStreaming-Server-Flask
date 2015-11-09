@@ -34,6 +34,7 @@ class Video(Base, CsMixin):
     type = Column(Enum('VOD', 'LIVE', name='cs_video_types'), nullable=False, default='LIVE')
     status = Column(Enum('EMPTY', 'OK', 'ERROR', name='cs_video_status_types'), nullable=False, default='EMPTY')
 
+    # the count is only available after all segments are uploaded
     segment_count = Column(Integer, nullable=False, default=0)
     segment_duration = Column(Integer, nullable=False, default=3000)
 

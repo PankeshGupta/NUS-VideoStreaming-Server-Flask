@@ -21,7 +21,7 @@ if "MEMCACHED" == CACHE_BACKEND:
         cache.set("cs2015_dummy_data", dummy_data)
 
         if dummy_data == cache.get("cs2015_dummy_data"):
-            logger.info("MemcachedCache was started successfully")
+            logger.info("MemcachedCache was started successfully.")
         else:
             logger.info("MemcachedCache is not working correctly. Using SimpleCache.")
             cache = SimpleCache()
@@ -43,7 +43,7 @@ elif "REDIS" == CACHE_BACKEND:
         cache.set("cs2015_dummy_data", dummy_data)
 
         if dummy_data == cache.get("cs2015_dummy_data"):
-            logger.info("RedisCache was started successfully")
+            logger.info("RedisCache was started successfully.")
         else:
             logger.info("RedisCache is not working correctly. Using SimpleCache.")
             cache = SimpleCache()

@@ -3,7 +3,7 @@
 import os
 import platform
 import shutil
-from subprocess import call
+from subprocess import call, STDOUT
 
 from video_repr import Constants as Repr
 from video_repr import DefaultRepresentations
@@ -26,10 +26,23 @@ def prepare_target_dir(file_path):
         os.makedirs(dir_name)
 
 
-def encode_x264(file_src, file_target, bitrate, fps, width, height, audio_asfq, audio_bitrate):
+def exec_command(command, log_file_path=None):
+    # log to file or to /dev/null
+    log_out = open(log_file_path, 'w') if log_file_path is not None else open(os.devnull, 'w')
+
+    try:
+        return call(command, shell=True, stdout=log_out, stderr=STDOUT)
+    finally:
+        log_out.close()
+
+
+def encode_x264(file_src, file_target, bitrate, fps, width, height, audio_asfq, audio_bitrate, log=True):
     prepare_target_dir(file_target)
 
-    call('./tools/%s/convert.sh "%s" %d %s %dx%d %d %d "%s"' % (
+    # log to file or to /dev/null
+    log_file = ("%s.log" % file_target) if log else None
+
+    exec_command('./tools/%s/convert.sh "%s" %d %s %dx%d %d %d "%s"' % (
         tool_platform_subdir,
         file_src,
         bitrate,
@@ -38,14 +51,14 @@ def encode_x264(file_src, file_target, bitrate, fps, width, height, audio_asfq, 
         audio_asfq,
         audio_bitrate,
         file_target
-    ), shell=True)
+    ), log_file)
 
     # since convert.sh does not return a meaningful exit code,
     # we check the result file
     return os.path.exists(file_target) and os.path.getsize(file_target) > 0
 
 
-def encode_x264_repr(file_src, file_target, video_repr):
+def encode_x264_repr(file_src, file_target, video_repr, log=True):
     return encode_x264(file_src,
                        file_target,
                        video_repr.bandwidth / Repr.VIDEO_BIT_RATE_DIV,
@@ -53,12 +66,17 @@ def encode_x264_repr(file_src, file_target, video_repr):
                        video_repr.width,
                        video_repr.height,
                        Repr.AUDIO_SAMPLE_FREQUENCY,
-                       Repr.AUDIO_BITRATE)
+                       Repr.AUDIO_BITRATE,
+                       log)
 
 
-def encode_mp42ts(file_src, file_target):
+def encode_mp42ts(file_src, file_target, log=True):
     prepare_target_dir(file_target)
-    exit_code = call('mp42ts "%s" "%s"' % (file_src, file_target), shell=True)
+
+    # log to file or to /dev/null
+    log_file = ("%s.log" % file_target) if log else None
+
+    exit_code = exec_command('mp42ts "%s" "%s"' % (file_src, file_target), log_file)
 
     # check both the exit code and the file
     return exit_code == 0 and os.path.exists(file_target) and os.path.getsize(file_target) > 0

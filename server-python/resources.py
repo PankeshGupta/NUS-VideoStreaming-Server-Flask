@@ -250,7 +250,8 @@ class VideoSegmentResource(Resource):
 
         return segment, 201
 
-    def _fast_check_video_id(self, video_id):
+    @staticmethod
+    def _fast_check_video_id(video_id):
         has_id = VideoListCache.has_id(video_id)
 
         if has_id is None or not isinstance(has_id, bool):
@@ -262,7 +263,8 @@ class VideoSegmentResource(Resource):
 
         return has_id
 
-    def _enqueue_segment_task(self, segment):
+    @staticmethod
+    def _enqueue_segment_task(segment):
         # do this in the background so we don't block the request
         gm_client.submit_job('cs2015_team03_segmentation', segment, background=True)
 
