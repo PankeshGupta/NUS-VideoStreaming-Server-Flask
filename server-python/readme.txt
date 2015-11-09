@@ -31,6 +31,11 @@ Copy the binaries files to /usr/local/bin.
 
 3. Start the app
 ===========================================
+Make sure the following processes are started:
+
+memcached
+gearmand
+
 Start these in separate terminals:
 
 ./segment_processor.py
