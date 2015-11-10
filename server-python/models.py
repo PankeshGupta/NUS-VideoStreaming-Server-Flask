@@ -124,18 +124,37 @@ class VideoListCache(object):
             video_ids.add(video.video_id)
         cache.set("cs2015_team03_all_video_ids", video_ids, timeout=5 * 60)
 
-    @staticmethod
-    def on_data_changed(target, value, oldvalue):
-        VideoListCache.clear()
 
-    @staticmethod
-    def listen_on_data_changes():
-        event.listen(CsMixin, 'after_insert', VideoListCache.on_data_changed, propagate=True)
-        event.listen(CsMixin, 'after_update', VideoListCache.on_data_changed, propagate=True)
-        event.listen(CsMixin, 'after_delete', VideoListCache.on_data_changed, propagate=True)
+# Caching the segment list.
+class SegmentListCache(object):
+    @classmethod
+    def get_cache_key(cls, video_id):
+        return "cs2015_team03_%s_segments" % video_id
+
+    @classmethod
+    def clear(cls, video_id):
+        cache.delete(cls.get_cache_key(video_id))
+
+    @classmethod
+    def get(cls, video_id):
+        return cache.get(cls.get_cache_key(video_id))
+
+    @classmethod
+    def set(cls, video_id, segments):
+        cache.set(cls.get_cache_key(video_id), segments, timeout=5 * 60)
 
 
-VideoListCache.listen_on_data_changes()
+# clear the relevant caches when data is changed
+def on_data_changed(target, value, oldvalue):
+    VideoListCache.clear()
+
+    if isinstance(oldvalue, Video):
+        SegmentListCache.clear(oldvalue.video_id)
+
+
+event.listen(CsMixin, 'after_insert', on_data_changed, propagate=True)
+event.listen(CsMixin, 'after_update', on_data_changed, propagate=True)
+event.listen(CsMixin, 'after_delete', on_data_changed, propagate=True)
 
 if __name__ == "__main__":
     from sqlalchemy import create_engine

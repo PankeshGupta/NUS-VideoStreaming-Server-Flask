@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 import logging
+
 import jinja2
 from flask_sqlalchemy_session import current_session as session
 from sqlalchemy import asc
-from db import session_factory
 from sqlalchemy.orm import scoped_session
-from models import Video, VideoSegment
+
+from db import session_factory
 
 logger = logging.getLogger(__name__)
 
