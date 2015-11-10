@@ -55,6 +55,10 @@ video_fields = {
 
     'uri_mpd': fields.String,
     'uri_m3u8': fields.String,
+
+    'uri_thumbnail': fields.String,
+
+    'base_url': fields.String,
 }
 
 video_segment_fields = {
@@ -314,7 +318,7 @@ class VideoSegmentListResource(Resource):
             raise
 
         if upload_success:
-            self._enqueue_segment_task(segment)
+            enqueue_segment_task('transcode', segment.video_id, segment.segment_id)
 
         return segment, 201
 
@@ -330,12 +334,6 @@ class VideoSegmentListResource(Resource):
             return video is not None
 
         return has_id
-
-    @staticmethod
-    def _enqueue_segment_task(segment):
-        # do this in the background so we don't block the request
-        gm_client.submit_job(SEGMENT_TASK_NAME, pickle.dumps((segment.video_id, segment.segment_id)), background=True)
-        logger.info("Submitted task into queue for segment [%s, %s]" % (segment.video_id, segment.segment_id))
 
 
 class VideoEndResource(Resource):
@@ -362,8 +360,9 @@ class VideoEndResource(Resource):
         video.type = 'VOD'
         video.status = 'OK'
 
-        # save the playlist files to file system
-
+        # generate the thumbnail
+        thumbnail_segment_id = int(video.segment_count / 2)
+        enqueue_segment_task('thumbnail', video.video_id, thumbnail_segment_id)
 
         try:
             session.add(video)
@@ -488,3 +487,12 @@ class LiveM3U8StreamResource(Resource):
         return gen_m3u8_stream(segment_duration_seconds=video.segment_duration / 1000,
                                segment_list=segments,
                                base_url=base_url)
+
+
+def enqueue_segment_task(task_name, video_id, segment_id):
+    # do this in the background so we don't block the request
+    gm_client.submit_job(SEGMENT_TASK_NAME,
+                         pickle.dumps((task_name, video_id, segment_id)),
+                         background=True)
+
+    logger.info("Submitted task [%s] into queue for segment [%s, %s]" % (task_name, video_id, segment_id))

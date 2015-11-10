@@ -11,11 +11,14 @@ from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy import String
 from sqlalchemy import event
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 from sqlalchemy.orm import composite
 from sqlalchemy.orm import relationship
 
 from caching import cache
+from settings import BASE_URL_VIDEOS
+from settings import DB_URI
 from video_repr import VideoRepresentation
 
 Base = declarative_base()
@@ -62,6 +65,14 @@ class Video(Base, CsMixin):
     # each uri can be a dynamic resource (live streaming) or a static file (on demand)
     uri_mpd = Column(String(255), nullable=True)
     uri_m3u8 = Column(String(255), nullable=True)
+
+    # thumbnail
+    uri_thumbnail = Column(String(255), nullable=True)
+
+    @hybrid_property
+    def base_url(self):
+        # this not saved into the database, but the client needs this
+        return "%s/%s" % (BASE_URL_VIDEOS, self.video_id)
 
 
 class VideoSegment(Base, CsMixin):
@@ -158,7 +169,6 @@ event.listen(CsMixin, 'after_delete', on_data_changed, propagate=True)
 
 if __name__ == "__main__":
     from sqlalchemy import create_engine
-    from settings import DB_URI
 
     engine = create_engine(DB_URI)
 

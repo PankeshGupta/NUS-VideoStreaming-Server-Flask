@@ -250,9 +250,78 @@ def transcode_segment(video_id, segment_id):
     return True
 
 
+def generate_thumbnail(video_id, segment_id):
+    segment = find_segment(video_id=video_id, segment_id=segment_id)
+    if segment is None:
+        return False
+
+    if not os.path.exists(segment.original_path):
+        logger.error("Segment file does not exist: %s" % segment.original_path)
+        return False
+
+    src = segment.original_path
+    dst = "%s/%s/thumbnail.jpeg" % (
+        DIR_SEGMENT_TRANSCODED,
+        segment.video_id
+    )
+
+    try:
+        # for MPD
+        if not video_util.gen_thumbnail(src, dst):
+            logger.error("Generating thumbnail for segment [%s, %s] from: %s" %
+                         (segment.video_id,
+                          segment.segment_id,
+                          src))
+
+            return False
+
+        # updating the thumbnail info for video
+        video = find_video(video_id=video_id)
+        if video is None:
+            # video has been deleted while the encoding was going on
+            # clean up the files
+            logger.info("Video [%s] has been deleted" % segment.video_id)
+            return False
+
+        video.uri_thumbnail = 'thumbnail.jpeg'
+
+        try:
+            session.add(video)
+            session.commit()
+            logger.info("Generated thumbnail for segment [%s, %s] from: %s" %
+                        (segment.video_id,
+                         segment.segment_id,
+                         src))
+
+            return True
+
+        except:
+            session.rollback()
+            logger.error("Error saving video to database after generating thumbnail [%s, %s]: %s" %
+                         (segment.video_id,
+                          segment.segment_id,
+                          traceback.format_exc()))
+
+            return False
+
+    except:
+        logger.error("Failed to generating thumbnail for segment [%s, %s]: %s" %
+                     (segment.video_id,
+                      segment.segment_id,
+                      traceback.format_exc()))
+
+        return False
+
+
 def task_listener(gearman_worker, gearman_job):
-    video_id, segment_id = pickle.loads(gearman_job.data)
-    result = transcode_segment(video_id, segment_id)
+    task_name, video_id, segment_id = pickle.loads(gearman_job.data)
+    result = False
+
+    if task_name == 'transcode':
+        result = transcode_segment(video_id, segment_id)
+    elif task_name == 'thumbnail':
+        result = generate_thumbnail(video_id, segment_id)
+
     return pickle.dumps(result)
 
 

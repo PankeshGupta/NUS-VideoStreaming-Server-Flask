@@ -25,7 +25,7 @@ DIR_SEGMENT_UPLOADED = 'test_videos/upload'
 DIR_SEGMENT_TRANSCODED = 'test_videos/sm'
 
 # Base URL for videos file
-BASE_URL_VIDEOS = "/videos"
+BASE_URL_VIDEOS = "/video_files"
 
 
 SUPER_USERS = {

@@ -9,7 +9,7 @@ from flask.ext.restful import Api
 from flask_sqlalchemy_session import flask_scoped_session
 
 from db import session_factory
-from settings import SUPER_USERS
+from settings import SUPER_USERS, DIR_SEGMENT_TRANSCODED
 
 app = Flask(__name__, static_url_path='')
 flask_scoped_session(session_factory, app)
@@ -82,9 +82,9 @@ def send_js(path):
 
 
 # serves video files
-@app.route('/videos/<path:path>')
+@app.route('/video_files/<path:path>')
 def send_video(path):
-    return send_from_directory('test_videos/sm', path)
+    return send_from_directory(DIR_SEGMENT_TRANSCODED, path)
 
 
 if __name__ == '__main__':

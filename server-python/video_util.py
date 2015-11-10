@@ -12,13 +12,11 @@ from video_repr import Constants as Repr, DefaultRepresentations
 
 tool_platform_subdir = "ix"
 
-
 # for obtaining the duration of a video file
 ffprobe_duration_regex = re.compile(
     r'.*Duration: (?P<hours>\d+?):(?P<minutes>\d+?):'
     r'(?P<seconds>\d+?).(?P<milliseconds>\d+?), start:.*'
 )
-
 
 # Added this because Ubuntu needs a different version of the convert.sh script
 if platform.linux_distribution()[0] == "Ubuntu":
@@ -96,16 +94,30 @@ def encode_mp42ts(file_src, file_target, log=True):
     return exit_code == 0 and os.path.exists(file_target) and os.path.getsize(file_target) > 0
 
 
+def gen_thumbnail(file_src, file_target, log=True):
+    prepare_target_dir(file_target)
+
+    # log to file or to /dev/null
+    log_file = ("%s.log" % file_target) if log else None
+
+    exit_code = exec_command('/usr/local/bin/ffmpeg -i "%s" -vf  "thumbnail" -frames:v 1 "%s"' %
+                             (file_src, file_target), log_file)
+
+    # check both the exit code and the file after a short wait
+    time.sleep(0.2)
+
+    return exit_code == 0 and os.path.exists(file_target) and os.path.getsize(file_target) > 0
+
+
 def get_duration_millis(file_name):
     result = Popen(["ffprobe", file_name], stdout=PIPE, stderr=STDOUT)
     lines = [x for x in result.stdout.readlines() if "Duration:" in x]
     if len(lines) == 0:
-        return None
+        return 0
 
     duration_parts = ffprobe_duration_regex.match(lines[0])
     if not duration_parts:
-        print "not found"
-        return
+        return 0
 
     d = duration_parts.groupdict()
     d['milliseconds'] = int(str(d['milliseconds']).ljust(3, '0'))
@@ -151,5 +163,7 @@ if __name__ == "__main__":
 
     encode_mp42ts('test_videos/output/HIGH/test_video.mp4',
                   'test_videos/output/HIGH/test_video.ts')
+
+    # gen_thumbnail('test_videos/test_video.mp4', 'test_videos/output/thumbnail.jpeg')
 
     # print get_duration_millis('test_videos/test_video.mp4')
