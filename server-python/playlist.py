@@ -39,11 +39,12 @@ def gen_mpd(base_url, segment_duration_millis, segment_list, repr_list):
 
 
 def gen_m3u8_root(base_url, repr_list):
-    return template_m3u8_root.render(repr_list=repr_list)
+    return template_m3u8_root.render(base_url=base_url, repr_list=repr_list)
 
 
-def gen_m3u8_stream(segment_duration_seconds, segment_list):
-    return template_m3u8_stream.render(segment_duration_seconds=segment_duration_seconds,
+def gen_m3u8_stream(segment_duration_seconds, segment_list, base_url=""):
+    return template_m3u8_stream.render(base_url=base_url,
+                                       segment_duration_seconds=segment_duration_seconds,
                                        segment_list=segment_list)
 
 
@@ -63,7 +64,7 @@ def output_mpd_to_string(video, base_url):
 
 
 def output_mpd_to_file(video, file_path, base_url):
-    logger.info("Updating playlist file: %s" % file_path)
+    logger.info("Updating MPD playlist file: %s" % file_path)
 
     with open(file_path, "w") as text_file:
         text_file.write(output_mpd_to_string(video, base_url))
@@ -82,12 +83,32 @@ def output_m3u8_stream_to_string(video):
 
 
 def output_m3u8_stream_to_files(video, file_paths):
-    logger.info("Updating playlist files: %s" % file_paths)
+    logger.info("Updating M3U3 stream playlist files: %s" % file_paths)
 
     m3u8_str = output_m3u8_stream_to_string(video)
     for file_path in file_paths:
         with open(file_path, "w") as text_file:
             text_file.write(m3u8_str)
+
+
+def output_m3u8_root_to_file(base_url, repr_list, file_path):
+    logger.info("Updating M3U3 root playlist file: %s" % file_path)
+
+    m3u8_root_str = gen_m3u8_root(base_url, repr_list)
+    with open(file_path, "w") as text_file:
+        text_file.write(m3u8_root_str)
+
+
+def output_m3u8_stream_to_string(video):
+    segments = session \
+        .query(VideoSegment) \
+        .filter((VideoSegment.video_id == video.video_id) &
+                (VideoSegment.status == 'OK')) \
+        .order_by(asc(VideoSegment.segment_id)) \
+        .all()
+
+    return gen_m3u8_stream(segment_duration_seconds=video.segment_duration / 1000,
+                           segment_list=segments)
 
 
 if __name__ == "__main__":

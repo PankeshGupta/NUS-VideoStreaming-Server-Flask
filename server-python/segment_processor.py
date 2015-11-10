@@ -12,7 +12,7 @@ import video_util
 from db import session_factory
 from models import Video, VideoSegment
 from names import SEGMENT_TASK_NAME
-from playlist import output_mpd_to_file, output_m3u8_stream_to_files
+from playlist import output_mpd_to_file, output_m3u8_stream_to_files, output_m3u8_root_to_file
 from settings import DIR_SEGMENT_TRANSCODED
 from settings import GEARMAND_HOST_PORT
 
@@ -155,6 +155,9 @@ def transcode_segment(video_id, segment_id):
     segment.repr_2_status = 'PROCESSING'
     segment.repr_3_status = 'PROCESSING'
 
+    # update the duration
+    segment.duration = video_util.get_duration_millis(segment.original_path)
+
     try:
         session.add(segment)
         session.commit()
@@ -223,12 +226,18 @@ def transcode_segment(video_id, segment_id):
 
     # update the playlist file
     try:
-        output_mpd_to_file(video, "%s/%s/%s.mpd" % (DIR_SEGMENT_TRANSCODED, segment.video_id, segment.video_id),
-                           "sm/%s" % segment.video_id)
+        output_mpd_to_file(video=video,
+                           file_path="%s/%s/%s.mpd" % (DIR_SEGMENT_TRANSCODED, segment.video_id, segment.video_id),
+                           base_url="")
 
-        output_m3u8_stream_to_files(video,
+        output_m3u8_stream_to_files(video=video,
+                                    file_paths=
                                     ["%s/%s/%s/stream.m3u8" % (DIR_SEGMENT_TRANSCODED, segment.video_id, repr.name)
                                      for repr in repr_list])
+
+        output_m3u8_root_to_file(base_url="",
+                                 repr_list=repr_list,
+                                 file_path="%s/%s/root.m3u8" % (DIR_SEGMENT_TRANSCODED, segment.video_id))
 
     except:
         logger.error("Error updating play list file [%s, %s]: %s" %

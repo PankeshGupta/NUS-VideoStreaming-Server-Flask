@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
 import logging
+
 from flask import Flask
 from flask import render_template
 from flask import send_from_directory
 from flask.ext.restful import Api
 from flask_sqlalchemy_session import flask_scoped_session
+
 from db import session_factory
 from settings import SUPER_USERS
 
@@ -52,8 +54,8 @@ api.add_resource(VideoSegmentListResource, '/video_segment/<int:video_id>', endp
 api.add_resource(VideoSegmentResource, '/video_segment/<int:video_id>/<int:segment_id>', endpoint='video_segment')
 
 api.add_resource(LiveMpdResource, '/live_mpd/<int:video_id>.mpd', endpoint='live_mpd')
-api.add_resource(LiveM3U8RootResource, '/live_m3u8/<int:video_id>.m3u8', endpoint='live_m3u8')
-api.add_resource(LiveM3U8StreamResource, '/live_m3u8/<int:video_id>.<string:repr_name>.m3u8', endpoint='live_m3u8_stream')
+api.add_resource(LiveM3U8RootResource, '/live_m3u8/<int:video_id>/root.m3u8', endpoint='live_m3u8')
+api.add_resource(LiveM3U8StreamResource, '/live_m3u8/<int:video_id>/<string:repr_name>/stream.m3u8', endpoint='live_m3u8_stream')
 
 
 #################

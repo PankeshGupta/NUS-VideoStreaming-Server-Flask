@@ -76,6 +76,7 @@ class VideoSegment(Base, CsMixin):
 
     # overall status
     status = Column(Enum('OK', 'ERROR', 'PROCESSING', 'NIL'), nullable=False, default='NIL')
+    duration = Column(Integer, nullable=False, default=0)
 
     # segment status for each representation
     repr_1_status = Column(Enum('OK', 'ERROR', 'PROCESSING', 'NIL'), nullable=False, default='NIL')

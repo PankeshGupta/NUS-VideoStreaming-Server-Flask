@@ -20,7 +20,7 @@ from models import VideoListCache
 from models import VideoSegment
 from names import SEGMENT_TASK_NAME
 from playlist import gen_mpd, gen_m3u8_root, gen_m3u8_stream
-from settings import DIR_SEGMENT_TRANSCODED
+from settings import DIR_SEGMENT_TRANSCODED, BASE_URL_VIDEOS
 from settings import DIR_SEGMENT_UPLOADED
 from settings import GEARMAND_HOST_PORT
 from settings import USE_CACHE_FOR_POLLING
@@ -391,7 +391,9 @@ class LiveMpdResource(Resource):
             return None
 
         last_obtained_segment = request.args.get('last_segment_id', None)
-        response_data = LiveMpdResource.build_mpd_string("", video, last_obtained_segment)
+        response_data = LiveMpdResource.build_mpd_string("%s/%s" % (BASE_URL_VIDEOS, video.video_id),
+                                                         video,
+                                                         last_obtained_segment)
 
         response = make_response(response_data)
         response.headers['content-type'] = 'application/dash+xml'
@@ -464,7 +466,9 @@ class LiveM3U8StreamResource(Resource):
             abort(404, message="Video (%s) doesn't exist" % video_id)
             return None
 
-        response_data = LiveM3U8StreamResource.build_stream_m3u8_string(video)
+        response_data = LiveM3U8StreamResource.build_stream_m3u8_string(video,
+                                                                        "%s/%s/%s" %
+                                                                        (BASE_URL_VIDEOS, video.video_id, repr_name))
 
         response = make_response(response_data)
         response.headers['content-type'] = 'application/vnd.apple.mpegurl'
@@ -473,7 +477,7 @@ class LiveM3U8StreamResource(Resource):
         return response
 
     @staticmethod
-    def build_stream_m3u8_string(video):
+    def build_stream_m3u8_string(video, base_url):
         segments = session \
             .query(VideoSegment) \
             .filter((VideoSegment.video_id == video.video_id) &
@@ -482,4 +486,5 @@ class LiveM3U8StreamResource(Resource):
             .all()
 
         return gen_m3u8_stream(segment_duration_seconds=video.segment_duration / 1000,
-                               segment_list=segments)
+                               segment_list=segments,
+                               base_url=base_url)
