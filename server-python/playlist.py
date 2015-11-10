@@ -8,6 +8,8 @@ from sqlalchemy import asc
 from sqlalchemy.orm import scoped_session
 
 from db import session_factory
+from models import VideoSegment
+from video_repr import DefaultRepresentations as Reprs
 
 logger = logging.getLogger(__name__)
 
@@ -113,9 +115,6 @@ def output_m3u8_stream_to_string(video):
 
 
 if __name__ == "__main__":
-    from models import VideoSegment
-    from video_repr import DefaultRepresentations as Reprs
-
     # test the above method
 
     base_url = "http://www.video.org/myvideo.mp4"
