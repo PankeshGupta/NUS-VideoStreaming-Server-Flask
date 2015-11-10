@@ -11,10 +11,10 @@ from sqlalchemy.orm import scoped_session
 import video_util
 from db import session_factory
 from models import Video, VideoSegment
-from names import SEGMENT_TASK_NAME
 from playlist import output_mpd_to_file, output_m3u8_stream_to_files, output_m3u8_root_to_file
 from settings import DIR_SEGMENT_TRANSCODED
 from settings import GEARMAND_HOST_PORT
+from settings import SEGMENT_TASK_NAME
 
 # make sure the output dir exists
 if not os.path.exists(DIR_SEGMENT_TRANSCODED):

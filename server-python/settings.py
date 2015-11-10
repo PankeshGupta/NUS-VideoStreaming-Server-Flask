@@ -15,6 +15,8 @@ REDIS_PORT = '8009'
 # Gearman
 GEARMAND_HOST_PORT = 'localhost:4730'
 
+# task names
+SEGMENT_TASK_NAME = "cs2015_team03_segment_task"
 
 # Directory for uploaded segment files
 DIR_SEGMENT_UPLOADED = 'test_videos/upload'
@@ -24,6 +26,7 @@ DIR_SEGMENT_TRANSCODED = 'test_videos/sm'
 
 # Base URL for videos file
 BASE_URL_VIDEOS = "/videos"
+
 
 SUPER_USERS = {
     "tony": "whoami",

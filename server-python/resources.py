@@ -18,11 +18,11 @@ from admin_auth import auth
 from models import Video
 from models import VideoListCache
 from models import VideoSegment
-from names import SEGMENT_TASK_NAME
 from playlist import gen_mpd, gen_m3u8_root, gen_m3u8_stream
 from settings import DIR_SEGMENT_TRANSCODED, BASE_URL_VIDEOS
 from settings import DIR_SEGMENT_UPLOADED
 from settings import GEARMAND_HOST_PORT
+from settings import SEGMENT_TASK_NAME
 from settings import USE_CACHE_FOR_POLLING
 from video_repr import DefaultRepresentations as Reprs
 
