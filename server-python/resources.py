@@ -294,7 +294,7 @@ class VideoSegmentListResource(Resource):
                 os.mkdir(dir_path)
 
             uploaded_file = parse_args['data']
-            uploaded_file.save(segment.original_path)
+            uploaded_file.save(dst=segment.original_path, buffer_size=524288)
 
         except:
             upload_success = False
