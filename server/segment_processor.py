@@ -52,6 +52,14 @@ logger = logging.getLogger(__name__)
 
 
 #################
+# Paths
+#################
+
+root_dir = os.path.dirname(os.path.abspath(__file__))
+transcode_path = os.path.join(root_dir, DIR_SEGMENT_TRANSCODED)
+
+
+#################
 # Init the worker
 #################
 
@@ -85,14 +93,14 @@ def transcode_segment_for_repr(arg_tuple):
     src = segment.original_path
 
     repr_output_mpd = "%s/%s/%s/%s" % (
-        DIR_SEGMENT_TRANSCODED,
+        transcode_path,
         segment.video_id,
         repr.name,
         segment.media_mpd
     )
 
     repr_output_m3u8 = "%s/%s/%s/%s" % (
-        DIR_SEGMENT_TRANSCODED,
+        transcode_path,
         segment.video_id,
         repr.name,
         segment.media_m3u8
@@ -227,17 +235,17 @@ def transcode_segment(video_id, segment_id):
     # update the playlist file
     try:
         output_mpd_to_file(video=video,
-                           file_path="%s/%s/%s.mpd" % (DIR_SEGMENT_TRANSCODED, segment.video_id, segment.video_id),
+                           file_path="%s/%s/%s.mpd" % (transcode_path, segment.video_id, segment.video_id),
                            base_url="")
 
         output_m3u8_stream_to_files(video=video,
                                     file_paths=
-                                    ["%s/%s/%s/stream.m3u8" % (DIR_SEGMENT_TRANSCODED, segment.video_id, repr.name)
+                                    ["%s/%s/%s/stream.m3u8" % (transcode_path, segment.video_id, repr.name)
                                      for repr in repr_list])
 
         output_m3u8_root_to_file(base_url="",
                                  repr_list=repr_list,
-                                 file_path="%s/%s/root.m3u8" % (DIR_SEGMENT_TRANSCODED, segment.video_id))
+                                 file_path="%s/%s/root.m3u8" % (transcode_path, segment.video_id))
 
     except:
         logger.error("Error updating play list file [%s, %s]: %s" %
@@ -261,7 +269,7 @@ def generate_thumbnail(video_id, segment_id):
 
     src = segment.original_path
     dst = "%s/%s/thumbnail.jpeg" % (
-        DIR_SEGMENT_TRANSCODED,
+        transcode_path,
         segment.video_id
     )
 

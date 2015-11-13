@@ -97,6 +97,11 @@ if not os.path.exists(DIR_SEGMENT_TRANSCODED):
 # gearman job queue
 gm_client = GearmanClient([GEARMAND_HOST_PORT])
 
+
+# path resolution
+root_dir = os.path.dirname(os.path.abspath(__file__))
+upload_path = os.path.join(root_dir, DIR_SEGMENT_UPLOADED)
+
 # importing pickle
 try:
     import cPickle as pickle
@@ -276,7 +281,7 @@ class VideoSegmentListResource(Resource):
 
         segment.original_extension = parse_args["original_extension"]
         segment.original_path = "%s/%s/%s.%s" % (
-            DIR_SEGMENT_UPLOADED,
+            upload_path,
             segment.video_id,
             segment.segment_id,
             segment.original_extension
