@@ -1,14 +1,19 @@
 #!/usr/bin/env python
 
+import logging
 import os
 import platform
 import re
 import shutil
-import time
-from datetime import timedelta
+import traceback
 from subprocess import call, STDOUT, PIPE, Popen
 
+import time
+from datetime import timedelta
+
 from video_repr import Constants as Repr, DefaultRepresentations
+
+logger = logging.getLogger(__name__)
 
 tool_platform_subdir = "ix"
 
@@ -21,6 +26,13 @@ ffprobe_duration_regex = re.compile(
 # Added this because Ubuntu needs a different version of the convert.sh script
 if platform.linux_distribution()[0] == "Ubuntu":
     tool_platform_subdir = "ubuntu"
+
+# checking the convert.sh
+convert_script_path = "./tools/%s/convert.sh" % tool_platform_subdir
+if not os.path.exists(convert_script_path):
+    logger.error("Unable to find tool: %s" % convert_script_path)
+else:
+    logger.info("Convert script found at: %s" % convert_script_path)
 
 
 def prepare_target_dir(file_path):
@@ -50,8 +62,12 @@ def encode_x264(file_src, file_target, bitrate, fps, width, height, audio_asfq, 
     # log to file or to /dev/null
     log_file = ("%s.log" % file_target) if log else None
 
-    exec_command('./tools/%s/convert.sh "%s" %d %s %dx%d %d %d "%s"' % (
-        tool_platform_subdir,
+    if not os.path.exists(convert_script_path):
+        logger.error("Unable to find tool: %s" % convert_script_path)
+        return False
+
+    command = '%s "%s" %d %s %dx%d %d %d "%s"' % (
+        convert_script_path,
         file_src,
         bitrate,
         str(fps),
@@ -59,7 +75,11 @@ def encode_x264(file_src, file_target, bitrate, fps, width, height, audio_asfq, 
         audio_asfq,
         audio_bitrate,
         file_target
-    ), log_file)
+    )
+
+    logger.info("Running: %s" % command)
+
+    exec_command(command, log_file)
 
     # since convert.sh does not return a meaningful exit code,
     # we check the result file after a short wait
@@ -86,7 +106,10 @@ def encode_mp42ts(file_src, file_target, log=True):
     # log to file or to /dev/null
     log_file = ("%s.log" % file_target) if log else None
 
-    exit_code = exec_command('/usr/local/bin/mp42ts "%s" "%s"' % (file_src, file_target), log_file)
+    command = '/usr/local/bin/mp42ts "%s" "%s"' % (file_src, file_target)
+    logger.info("Running: %s" % command)
+
+    exit_code = exec_command(command, log_file)
 
     # check both the exit code and the file after a short wait
     time.sleep(0.2)
@@ -100,8 +123,10 @@ def gen_thumbnail(file_src, file_target, log=True):
     # log to file or to /dev/null
     log_file = ("%s.log" % file_target) if log else None
 
-    exit_code = exec_command('/usr/local/bin/ffmpeg -i "%s" -vf  "thumbnail" -frames:v 1 "%s"' %
-                             (file_src, file_target), log_file)
+    command = '/usr/local/bin/ffmpeg -i "%s" -vf  "thumbnail" -frames:v 1 "%s"' % (file_src, file_target)
+    logger.info("Running: %s" % command)
+
+    exit_code = exec_command(command, log_file)
 
     # check both the exit code and the file after a short wait
     time.sleep(0.2)
@@ -110,23 +135,31 @@ def gen_thumbnail(file_src, file_target, log=True):
 
 
 def get_duration_millis(file_name):
-    result = Popen(["ffprobe", file_name], stdout=PIPE, stderr=STDOUT)
-    lines = [x for x in result.stdout.readlines() if "Duration:" in x]
-    if len(lines) == 0:
+    try:
+        result = Popen(["/usr/local/bin/ffprobe", file_name], stdout=PIPE, stderr=STDOUT)
+        lines = [x for x in result.stdout.readlines() if "Duration:" in x]
+        if len(lines) == 0:
+            return 0
+
+        duration_parts = ffprobe_duration_regex.match(lines[0])
+        if not duration_parts:
+            return 0
+
+        d = duration_parts.groupdict()
+        d['milliseconds'] = int(str(d['milliseconds']).ljust(3, '0'))
+        d['seconds'] = int(d['seconds'])
+        d['minutes'] = int(d['minutes'])
+        d['hours'] = int(d['hours'])
+
+        duration = timedelta(hours=d['hours'], minutes=d['minutes'], seconds=d['seconds'],
+                             milliseconds=d['milliseconds'])
+        return int(duration.total_seconds() * 1000)
+
+    except:
+        logger.error("Unable to get duration for %s, error: %s" %
+                     (file_name, traceback.format_exc()))
+
         return 0
-
-    duration_parts = ffprobe_duration_regex.match(lines[0])
-    if not duration_parts:
-        return 0
-
-    d = duration_parts.groupdict()
-    d['milliseconds'] = int(str(d['milliseconds']).ljust(3, '0'))
-    d['seconds'] = int(d['seconds'])
-    d['minutes'] = int(d['minutes'])
-    d['hours'] = int(d['hours'])
-
-    duration = timedelta(hours=d['hours'], minutes=d['minutes'], seconds=d['seconds'], milliseconds=d['milliseconds'])
-    return int(duration.total_seconds() * 1000)
 
 
 if __name__ == "__main__":

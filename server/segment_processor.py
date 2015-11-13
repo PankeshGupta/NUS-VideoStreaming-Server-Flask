@@ -58,6 +58,7 @@ logger = logging.getLogger(__name__)
 root_dir = os.path.dirname(os.path.abspath(__file__))
 transcode_path = os.path.join(root_dir, DIR_SEGMENT_TRANSCODED)
 
+logger.info("Transcode directory: %s" % transcode_path)
 
 #################
 # Init the worker
@@ -65,27 +66,37 @@ transcode_path = os.path.join(root_dir, DIR_SEGMENT_TRANSCODED)
 
 
 def find_video(video_id):
-    video = session \
-        .query(Video) \
-        .filter(Video.video_id == video_id) \
-        .first()
+    try:
+        video = session \
+            .query(Video) \
+            .filter(Video.video_id == video_id) \
+            .first()
 
-    if video is None:
-        logger.error("Video ID was not found: %s" % video_id)
+        if video is None:
+            logger.error("Video ID was not found: %s" % video_id)
 
-    return video
+        return video
+
+    except:
+        logger.error("Error querying from database %s" % traceback.format_exc())
+        return None
 
 
 def find_segment(video_id, segment_id):
-    segment = session \
-        .query(VideoSegment) \
-        .filter((VideoSegment.video_id == video_id) & (VideoSegment.segment_id == segment_id)) \
-        .first()
+    try:
+        segment = session \
+            .query(VideoSegment) \
+            .filter((VideoSegment.video_id == video_id) & (VideoSegment.segment_id == segment_id)) \
+            .first()
 
-    if segment is None:
-        logger.error("Segment was not found: %s|%s" % (video_id, segment_id))
+        if segment is None:
+            logger.error("Segment was not found: %s|%s" % (video_id, segment_id))
 
-    return segment
+        return segment
+
+    except:
+        logger.error("Error querying from database %s" % traceback.format_exc())
+        return None
 
 
 def transcode_segment_for_repr(arg_tuple):
@@ -107,6 +118,7 @@ def transcode_segment_for_repr(arg_tuple):
     )
 
     if repr is None:
+        logger.error("repr not found")
         return None
 
     success = None
@@ -143,14 +155,16 @@ def transcode_segment_for_repr(arg_tuple):
 
 
 def transcode_segment(video_id, segment_id):
-    logger.info("Processing segment %s of video %s" % (segment_id, video_id))
+    logger.info("Transcoding segment %s of video %s" % (segment_id, video_id))
 
     video = find_video(video_id=video_id)
     if video is None:
+        logger.error("Unable to find video (%d)", video_id)
         return False
 
     segment = find_segment(video_id=video_id, segment_id=segment_id)
     if segment is None:
+        logger.error("Unable to find segment (%d, %d)", video_id, segment_id)
         return False
 
     if not os.path.exists(segment.original_path):
@@ -184,6 +198,7 @@ def transcode_segment(video_id, segment_id):
 
     try:
         # running all transcoding tasks for this segment in parallel
+        logger.info("Starting a thread pool to transcode %s" % segment.original_path)
         mp_pool = mp.Pool(processes=len(repr_list))
         task_params = [(segment, r) for r in repr_list]
         task_success = mp_pool.map(transcode_segment_for_repr, task_params)

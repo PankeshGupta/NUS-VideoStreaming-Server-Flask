@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <MPD xmlns="urn:mpeg:dash:schema:mpd:2011" profiles="urn:mpeg:dash:profile:full:2011" minBufferTime="PT1.5S">
     <Period duration="PT0S">
-        <BaseURL>{{ base_url }}</BaseURL>
+        <BaseURL>{{ base_url }}/</BaseURL>
         <AdaptationSet mimeType="video/mp4">
             {% for repr in repr_list %}
                 <Representation id="{{ repr.name }}" bandwidth="{{ repr.bandwidth }}" width="{{ repr.width }}" height="{{ repr.height }}">
