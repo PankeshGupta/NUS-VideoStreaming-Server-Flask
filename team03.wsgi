@@ -5,7 +5,7 @@ import os
 import sys
 
 logging.basicConfig(stream=sys.stderr)
-sys.path.insert(0, os.path.abspath("/home/lpthanh/cs5248-server"))
+sys.path.insert(0, os.path.abspath("/var/www/cs5248"))
 
 from server import app as application
 

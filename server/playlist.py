@@ -2,6 +2,7 @@
 
 import logging
 
+import os
 import jinja2
 from flask_sqlalchemy_session import current_session as session
 from sqlalchemy import asc
@@ -23,7 +24,10 @@ session = scoped_session(session_factory)
 # Templates
 #################
 
-templateLoader = jinja2.FileSystemLoader(searchpath="templates_playlist")
+root_dir = os.path.dirname(os.path.abspath(__file__))
+template_dir = os.path.join(root_dir, 'templates_playlist')
+
+templateLoader = jinja2.FileSystemLoader(searchpath=template_dir)
 templateEnv = jinja2.Environment(loader=templateLoader,
                                  trim_blocks=True,
                                  lstrip_blocks=True,

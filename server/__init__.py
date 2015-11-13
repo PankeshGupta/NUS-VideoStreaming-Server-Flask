@@ -1,6 +1,5 @@
-#!/usr/bin/env python
-
 import logging
+import os
 
 from flask import Flask
 from flask import render_template
@@ -17,6 +16,15 @@ flask_scoped_session(session_factory, app)
 # authentication for admin resources
 app.config['SECRET_KEY'] = 'who knows this?'
 from admin_auth import auth
+
+#################
+# Ftatic files
+#################
+
+root_dir = os.path.dirname(os.path.abspath(__file__))
+
+static_app = os.path.join(root_dir, 'static', 'app')
+static_video_files = os.path.join(root_dir, DIR_SEGMENT_TRANSCODED)
 
 #################
 # Logging
@@ -55,7 +63,8 @@ api.add_resource(VideoSegmentResource, '/video_segment/<int:video_id>/<int:segme
 
 api.add_resource(LiveMpdResource, '/live_mpd/<int:video_id>.mpd', endpoint='live_mpd')
 api.add_resource(LiveM3U8RootResource, '/live_m3u8/<int:video_id>/root.m3u8', endpoint='live_m3u8')
-api.add_resource(LiveM3U8StreamResource, '/live_m3u8/<int:video_id>/<string:repr_name>/stream.m3u8', endpoint='live_m3u8_stream')
+api.add_resource(LiveM3U8StreamResource, '/live_m3u8/<int:video_id>/<string:repr_name>/stream.m3u8',
+                 endpoint='live_m3u8_stream')
 
 
 #################
@@ -78,19 +87,10 @@ def index():
 # serves static files during development
 @app.route('/app/<path:path>')
 def send_js(path):
-    return send_from_directory('static/app', path)
+    return send_from_directory(static_app, path)
 
 
 # serves video files
 @app.route('/video_files/<path:path>')
 def send_video(path):
-    return send_from_directory(DIR_SEGMENT_TRANSCODED, path)
-
-
-if __name__ == '__main__':
-    # Setting use_reloader=False prevents the app from starting twice in debug mode.
-    # This is needed for Redis.
-    # app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False, threaded=True)
-
-    # for apache
-    app.run()
+    return send_from_directory(static_video_files, path)
