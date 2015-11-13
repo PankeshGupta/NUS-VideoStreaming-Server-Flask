@@ -87,20 +87,21 @@ segment_parser.add_argument('data', type=FileStorage, location='files')
 video_end_parser = reqparse.RequestParser()
 video_end_parser.add_argument('last_segment_id', type=long, location='form')
 
-# ensure the directory exists
-if not os.path.exists(DIR_SEGMENT_UPLOADED):
-    os.makedirs(DIR_SEGMENT_UPLOADED)
+# path resolution
+root_dir = os.path.dirname(os.path.abspath(__file__))
+upload_path = os.path.join(root_dir, DIR_SEGMENT_UPLOADED)
+transcode_path = os.path.join(root_dir, DIR_SEGMENT_TRANSCODED)
 
-if not os.path.exists(DIR_SEGMENT_TRANSCODED):
-    os.makedirs(DIR_SEGMENT_TRANSCODED)
+# ensure the directory exists
+if not os.path.exists(upload_path):
+    os.makedirs(upload_path)
+
+if not os.path.exists(transcode_path):
+    os.makedirs(transcode_path)
 
 # gearman job queue
 gm_client = GearmanClient([GEARMAND_HOST_PORT])
 
-
-# path resolution
-root_dir = os.path.dirname(os.path.abspath(__file__))
-upload_path = os.path.join(root_dir, DIR_SEGMENT_UPLOADED)
 
 # importing pickle
 try:
