@@ -1,8 +1,8 @@
 import logging
 import os
 import traceback
-from datetime import datetime
 
+from datetime import datetime
 from flask import request, make_response
 from flask.ext.restful import Resource
 from flask.ext.restful import abort
@@ -101,7 +101,6 @@ if not os.path.exists(transcode_path):
 
 # gearman job queue
 gm_client = GearmanClient([GEARMAND_HOST_PORT])
-
 
 # importing pickle
 try:
@@ -205,7 +204,7 @@ class VideoListResource(Resource):
         new_video.type = 'LIVE'
         new_video.status = 'EMPTY'
         new_video.created_at = datetime.now()
-        new_video.segment_count = 0
+        new_video.segment_count = -1
         new_video.segment_duration = 3000
         new_video.repr_1 = Reprs.HIGH
         new_video.repr_2 = Reprs.MEDIUM
@@ -268,14 +267,6 @@ class VideoSegmentListResource(Resource):
         if not video:
             abort(404, message="Video (%s) doesn't exist" % segment.video_id)
             return
-
-        # update the segment count if needed
-        expected_segment_count = segment.segment_id + 1
-        if video.segment_count < expected_segment_count:
-            video.segment_count = expected_segment_count
-            video.status = 'UPLOADING'
-            session.add(video)
-            session.flush()
 
         segment.uri_mpd = None
         segment.uri_m3u8 = None
@@ -395,25 +386,35 @@ class LiveMpdResource(Resource):
             abort(404, message="Video (%s) doesn't exist" % video_id)
             return None
 
-        last_obtained_segment = request.args.get('last_segment_id', None)
-        response_data = LiveMpdResource.build_mpd_string("%s/%s" % (BASE_URL_VIDEOS, video.video_id),
-                                                         video,
-                                                         last_obtained_segment)
+        last_requested_segment_id = request.args.get('last_segment_id', None)
+        response_data, new_last_segment_id = LiveMpdResource.build_mpd_string(
+            "%s/%s" % (BASE_URL_VIDEOS, video.video_id),
+            video,
+            last_requested_segment_id)
 
         response = make_response(response_data)
         response.headers['content-type'] = 'application/dash+xml'
         response.headers['content-disposition'] = 'attachment; filename="%s.mpd"' % video.video_id
 
+        stream_ended_str = "false"
+
+        if new_last_segment_id is not None:
+            response.headers['lastSegmentId'] = new_last_segment_id
+            if video.segment_count == new_last_segment_id + 1:
+                stream_ended_str = "true"
+
+        response.headers['streamEnded'] = stream_ended_str
+
         return response
 
     @staticmethod
-    def build_mpd_string(base_url, video, last_obtained_segment=None):
+    def build_mpd_string(base_url, video, last_requested_segment_id=None):
         segments = []
-        if last_obtained_segment is not None:
+        if last_requested_segment_id is not None:
             segments = session \
                 .query(VideoSegment) \
                 .filter((VideoSegment.video_id == video.video_id) &
-                        (VideoSegment.segment_id > last_obtained_segment) &
+                        (VideoSegment.segment_id > last_requested_segment_id) &
                         (VideoSegment.status == 'OK')) \
                 .order_by(asc(VideoSegment.segment_id)) \
                 .all()
@@ -426,10 +427,15 @@ class LiveMpdResource(Resource):
                 .all()
 
         repr_list = [video.repr_1, video.repr_2, video.repr_3]
+
+        new_last_segment_id = None
+        if segments and len(segments) > 0:
+            new_last_segment_id = segments[-1].segment_id
+
         return gen_mpd(base_url=base_url,
                        repr_list=repr_list,
                        segment_duration_millis=video.segment_duration,
-                       segment_list=segments)
+                       segment_list=segments), new_last_segment_id
 
 
 class LiveM3U8RootResource(Resource):

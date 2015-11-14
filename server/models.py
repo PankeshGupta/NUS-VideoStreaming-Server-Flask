@@ -40,7 +40,7 @@ class Video(Base, CsMixin):
     status = Column(Enum('EMPTY', 'UPLOADING', 'OK', 'ERROR'), nullable=False, default='EMPTY')
 
     # the count is only available after all segments are uploaded
-    segment_count = Column(Integer, nullable=False, default=0)
+    segment_count = Column(Integer, nullable=False, default=-1)
     segment_duration = Column(Integer, nullable=False, default=3000)
 
     # if a representation is not available, set its properties to null
