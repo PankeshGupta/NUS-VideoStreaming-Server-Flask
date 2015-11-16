@@ -286,10 +286,13 @@ def generate_thumbnail(video_id, segment_id):
         logger.error("Segment file does not exist: %s" % segment.original_path)
         return False
 
+    thumbnail_name = "thumbnail-%d.jpeg" % segment_id
+
     src = segment.original_path
-    dst = "%s/%s/thumbnail.jpeg" % (
+    dst = "%s/%s/%s" % (
         transcode_path,
-        segment.video_id
+        segment.video_id,
+        thumbnail_name
     )
 
     try:
@@ -310,7 +313,7 @@ def generate_thumbnail(video_id, segment_id):
             logger.info("Video [%s] has been deleted" % segment.video_id)
             return False
 
-        video.uri_thumbnail = 'thumbnail.jpeg'
+        video.uri_thumbnail = thumbnail_name
 
         try:
             session.add(video)
