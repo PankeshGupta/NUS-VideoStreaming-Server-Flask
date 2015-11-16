@@ -234,6 +234,10 @@ def transcode_segment(video_id, segment_id):
         return False
 
     try:
+        # check if this is the last segment
+        if segment_id == video.segment_count - 1:
+            video.type = 'VOD'
+
         session.add(segment)
         session.commit()
         logger.info("Finished processing video segment [%s, %s]" % (segment.video_id, segment.segment_id))

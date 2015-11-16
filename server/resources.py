@@ -315,6 +315,10 @@ class VideoSegmentListResource(Resource):
             raise
 
         if upload_success:
+            # generate the thumbnail for the first segment, for live streamings
+            if (segment.segment_id == 0):
+                enqueue_segment_task('thumbnail', video.video_id, 0)
+
             enqueue_segment_task('transcode', segment.video_id, segment.segment_id)
 
         return segment, 201
@@ -354,7 +358,6 @@ class VideoEndResource(Resource):
             return None
 
         video.segment_count = last_segment_id + 1
-        video.type = 'VOD'
         video.status = 'OK'
 
         # generate the thumbnail
