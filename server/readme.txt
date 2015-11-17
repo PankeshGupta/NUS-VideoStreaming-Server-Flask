@@ -67,3 +67,14 @@ are suitable for the number of CPU cores, to reduce context switching costs.
 We have a Admin UI built with React.JS and Backbone.JS, to view the uploaded video in real time.
 It can be accessed at: http://localhost:5000/
 Admin username and password can be found in settings.py (SUPER_USERS).
+
+
+5. Structure
+===========================================
+__init__.py             : app bootstrap
+models.py               : database schema based on SQLAlchemy
+resources.py            : Flask-Restful resources
+settings.py             : config information
+playlist.py             : utility to generate live playlist based on Jinja2 templates
+video_util.py           : utility to transcode a video by wrapping ffmpeg and other tools
+segment_processor.py    : Gearman worker for transcoding and generating thumbnail
