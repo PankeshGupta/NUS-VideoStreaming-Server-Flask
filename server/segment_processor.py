@@ -100,6 +100,11 @@ def find_segment(video_id, segment_id):
 
 
 def transcode_segment_for_repr(arg_tuple):
+    """
+    Perform the transcoding of one video segment into one quality levels.
+    The transcoding will first be into MP4, and then TS.
+    """
+
     segment, repr = arg_tuple
     src = segment.original_path
 
@@ -155,6 +160,17 @@ def transcode_segment_for_repr(arg_tuple):
 
 
 def transcode_segment(video_id, segment_id):
+    """
+    Perform the transcoding of one video segment into different quality levels.
+
+    This makes use of multiprocessing API to create a thread pool to transcode into
+    three quality levels simultaneously.
+
+    Each thread, handling one quality level, will first transcode the video segment into
+    a MP4 file, and then a TS file.
+
+    """
+
     logger.info("Transcoding segment %s of video %s" % (segment_id, video_id))
 
     video = find_video(video_id=video_id)
@@ -278,6 +294,15 @@ def transcode_segment(video_id, segment_id):
 
 
 def generate_thumbnail(video_id, segment_id):
+    """
+    Process the task to generate a thumbnail for a video, based on a segment ID.
+    This makes use of this command to generate the thumbnail:
+
+    /usr/local/bin/ffmpeg -i SRC -vf  "thumbnail" -frames:v 1 TARGET
+
+    Please make sure that /usr/local/bin/ffmpeg exists.
+    """
+
     segment = find_segment(video_id=video_id, segment_id=segment_id)
     if segment is None:
         return False

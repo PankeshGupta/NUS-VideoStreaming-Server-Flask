@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 cache = SimpleCache()
 
+# Provides a simple layer of caching for the video list, based on Memcached.
+
 if "MEMCACHED" == CACHE_BACKEND:
     # Try to use memcached
     try:
