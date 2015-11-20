@@ -122,7 +122,7 @@ class VideoResource(Resource):
 
         return video
 
-    @auth.login_required
+    # @auth.login_required
     def delete(self, video_id):
         logger.info("Deleting video [%s]" % video_id)
 
@@ -147,7 +147,7 @@ class VideoResource(Resource):
         return {}, 204
 
     @marshal_with(video_fields)
-    @auth.login_required
+    # @auth.login_required
     def put(self, video_id):
         logger.info("Updating video [%s]" % video_id)
         parsed_args = video_parser.parse_args()
