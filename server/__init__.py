@@ -4,7 +4,9 @@ import os
 from flask import Flask
 from flask import render_template
 from flask import send_from_directory
+
 from flask.ext.restful import Api
+
 from flask_sqlalchemy_session import flask_scoped_session
 
 from db import session_factory
@@ -54,13 +56,16 @@ from resources import LiveMpdResource
 from resources import LiveM3U8RootResource
 from resources import LiveM3U8StreamResource
 
+# endpoints for video
 api.add_resource(VideoListResource, '/videos', endpoint='video_list')
 api.add_resource(VideoResource, '/video/<int:video_id>', endpoint='video')
 api.add_resource(VideoEndResource, '/video_end/<int:video_id>', endpoint='video_end')
 
+# endpoints for video segment
 api.add_resource(VideoSegmentListResource, '/video_segment/<int:video_id>', endpoint='video_segment_list')
 api.add_resource(VideoSegmentResource, '/video_segment/<int:video_id>/<int:segment_id>', endpoint='video_segment')
 
+# endpoints for live playlists
 api.add_resource(LiveMpdResource, '/live_mpd/<int:video_id>.mpd', endpoint='live_mpd')
 api.add_resource(LiveM3U8RootResource, '/live_m3u8/<int:video_id>/root.m3u8', endpoint='live_m3u8')
 api.add_resource(LiveM3U8StreamResource, '/live_m3u8/<int:video_id>/<string:repr_name>/stream.m3u8',
@@ -78,6 +83,7 @@ def get_password(username):
     return None
 
 
+# authentication required, look into settings / SUPER_USERS for the username and password
 @app.route('/')
 @auth.login_required
 def index():

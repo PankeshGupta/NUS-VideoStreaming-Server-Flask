@@ -238,6 +238,10 @@ class VideoSegmentResource(Resource):
 
 
 class VideoSegmentListResource(Resource):
+    """
+    Resource to serve the segment list of one video.
+    """
+
     @marshal_with(video_segment_fields)
     def get(self, video_id):
         segments = session \
@@ -338,6 +342,10 @@ class VideoSegmentListResource(Resource):
 
 
 class VideoEndResource(Resource):
+    """
+    Resource to mark the end of a recording session.
+    """
+
     @marshal_with(video_fields)
     def post(self, video_id):
         parse_args = video_end_parser.parse_args()
@@ -377,6 +385,10 @@ class VideoEndResource(Resource):
 
 
 class LiveMpdResource(Resource):
+    """
+    Resource to serve the Live MPD playlist.
+    """
+
     def get(self, video_id):
 
         # check the video
@@ -442,6 +454,10 @@ class LiveMpdResource(Resource):
 
 
 class LiveM3U8RootResource(Resource):
+    """
+    Resource to serve the Live M3U8 root playlist.
+    """
+
     def get(self, video_id):
         # check the video
         video = session \
@@ -469,6 +485,10 @@ class LiveM3U8RootResource(Resource):
 
 
 class LiveM3U8StreamResource(Resource):
+    """
+    Resource to serve the Live M3U8 stream playlist.
+    """
+
     def get(self, video_id, repr_name):
         # check the video
         video = session \
