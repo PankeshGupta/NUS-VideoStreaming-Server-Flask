@@ -85,7 +85,7 @@ def get_password(username):
 
 # authentication required, look into settings / SUPER_USERS for the username and password
 @app.route('/')
-@auth.login_required
+# @auth.login_required
 def index():
     return render_template('index.html')
 
