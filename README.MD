@@ -87,12 +87,10 @@ npm run-script watch
 
 ## Run
 
-1. Make sure the following processes are started:
-* memcached
-* gearmand
-
+1. Make sure memcached and gearmand are running.
 
 2. Start the Gearman worker for segment transcoding (start multiple instances of this for more parallelism):
+
 ```
 server/segment_processor.py
 ```
