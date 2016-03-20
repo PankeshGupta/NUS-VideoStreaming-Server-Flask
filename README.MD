@@ -19,7 +19,7 @@ To enable parallelism for the transcoding process, we used Gearman as a job queu
 With this, the transcoding process is decoupled from the main REST API, so that it be managed and allocated resources independently from the main app. There can be multiple instances of the transcoder, but since transcoding is CPU-bound, one needs to make sure that the number of concurrent transcoding processes are suitable for the number of CPU cores, to reduce context switching costs.
 
 ### The Dashboard
-![Screenshot](/screenshot-server.png?raw=true "Screenshot")
+![Screenshot](/screenshot-server.jpeg?raw=true "Screenshot")
 
 We added a simple dashboard (in addition to the project requirements) to let the admin view the list of uploaded videos (updated in real-time). Due to the lack of time, the dashboard has only a few feature, such as delete or rename videos. It was built on [ReactJS](https://facebook.github.io/react) with Flux and [BackboneJS](http://backbonejs.org). This was considered an experiment with React rather than a full attempt to implement a comprehensive dashboard.
 
